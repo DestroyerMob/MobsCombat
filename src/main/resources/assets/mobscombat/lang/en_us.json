@@ -1,0 +1,23 @@
+{
+  "jade.mobscombat.archetype": "Archetype: %s",
+  "jade.mobscombat.guard": "Guard: %s/%s (%s%%)",
+  "jade.mobscombat.posture": "Posture: %s/%s (%s%%)",
+  "jade.mobscombat.profile_source": "Profile: %s",
+  "jade.mobscombat.seconds": "%ss",
+  "jade.mobscombat.status.counter": "Counter Window: %s",
+  "jade.mobscombat.status.guard_broken": "Guard Broken",
+  "jade.mobscombat.status.hard_stagger": "Hard Staggered: %s",
+  "jade.mobscombat.status.recovery": "Recovery: %s",
+  "jade.mobscombat.status.stagger": "Staggered: %s",
+  "jade.mobscombat.status.stagger_cooldown": "Stagger Cooldown: %s",
+  "mobscombat.archetype.armored": "Armored",
+  "mobscombat.archetype.basic_melee": "Basic Melee",
+  "mobscombat.archetype.boss": "Boss",
+  "mobscombat.archetype.brute": "Brute",
+  "mobscombat.archetype.caster": "Caster",
+  "mobscombat.archetype.flying": "Flying",
+  "mobscombat.archetype.generic_hostile": "Generic Hostile",
+  "mobscombat.archetype.no_op": "Disabled",
+  "mobscombat.archetype.ranged": "Ranged",
+  "mobscombat.archetype.swarm": "Swarm"
+}

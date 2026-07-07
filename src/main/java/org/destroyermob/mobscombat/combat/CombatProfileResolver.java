@@ -46,8 +46,8 @@ public final class CombatProfileResolver {
         if (type.is(CombatTags.EntityTypes.NO_COMBAT_PROFILE) || type.is(CombatTags.EntityTypes.NO_POSTURE)) {
             return new ResolvedEntityProfile(EntityCombatProfile.DISABLED, "disabled_tag");
         }
-        if (entity instanceof Player && !CombatConfig.pvpPostureEnabled()) {
-            return new ResolvedEntityProfile(EntityCombatProfile.DISABLED, "pvp_posture_disabled");
+        if (entity instanceof Player && !CombatConfig.playerPostureEnabled()) {
+            return new ResolvedEntityProfile(EntityCombatProfile.DISABLED, "player_posture_disabled");
         }
         if (entity instanceof ArmorStand) {
             return new ResolvedEntityProfile(EntityCombatProfile.DISABLED, "armor_stand");
@@ -145,15 +145,15 @@ public final class CombatProfileResolver {
 
     private static EntityCombatProfile playerProfile() {
         return new EntityCombatProfile(
-                CombatConfig.pvpPostureEnabled(),
+                CombatConfig.playerPostureEnabled(),
                 CombatArchetype.BASIC_MELEE,
                 1.0F,
                 0.0F,
                 2.0F,
                 4,
                 80,
-                0.85F,
-                0.9F,
+                0.55F,
+                0.65F,
                 false,
                 false,
                 false,

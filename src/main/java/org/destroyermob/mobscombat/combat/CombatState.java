@@ -95,7 +95,7 @@ public final class CombatState {
     }
 
     public void restorePostureAfterBreak() {
-        this.currentPosture = Math.max(1.0F, this.maxPosture * 0.35F);
+        this.currentPosture = Math.max(1.0F, this.maxPosture * CombatConfig.postureAfterBreakRatio());
     }
 
     public float currentGuard() {

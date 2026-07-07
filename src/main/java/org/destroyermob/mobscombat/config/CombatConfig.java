@@ -10,6 +10,7 @@ public final class CombatConfig {
     private static final ModConfigSpec.BooleanValue ENABLE_SHIELD_GUARD;
     private static final ModConfigSpec.BooleanValue ENABLE_TIMED_BLOCKS;
     private static final ModConfigSpec.BooleanValue ENABLE_RECOVERY_WINDOWS;
+    private static final ModConfigSpec.BooleanValue ENABLE_PLAYER_POSTURE;
     private static final ModConfigSpec.BooleanValue ENABLE_PVP_POSTURE;
     private static final ModConfigSpec.BooleanValue ENABLE_HARD_STAGGER;
     private static final ModConfigSpec.BooleanValue ENABLE_BOSS_HARD_STAGGER;
@@ -18,6 +19,7 @@ public final class CombatConfig {
     private static final ModConfigSpec.IntValue POSTURE_RECOVERY_DELAY_TICKS;
     private static final ModConfigSpec.IntValue DEFAULT_STAGGER_DURATION_TICKS;
     private static final ModConfigSpec.IntValue DEFAULT_STAGGER_COOLDOWN_TICKS;
+    private static final ModConfigSpec.DoubleValue POSTURE_AFTER_BREAK_RATIO;
     private static final ModConfigSpec.DoubleValue BOSS_HEALTH_THRESHOLD;
     private static final ModConfigSpec.IntValue PERFECT_BLOCK_WINDOW_TICKS;
     private static final ModConfigSpec.IntValue COUNTER_WINDOW_TICKS;
@@ -37,13 +39,15 @@ public final class CombatConfig {
         builder.push("posture");
         ENABLE_POSTURE = builder.define("enable_posture", true);
         ENABLE_RECOVERY_WINDOWS = builder.define("enable_recovery_windows", true);
+        ENABLE_PLAYER_POSTURE = builder.define("enable_player_posture", true);
         ENABLE_PVP_POSTURE = builder.define("enable_pvp_posture", false);
         ENABLE_HARD_STAGGER = builder.define("enable_hard_stagger", true);
         ENABLE_BOSS_HARD_STAGGER = builder.define("enable_boss_hard_stagger", false);
         GENERIC_POSTURE_BASE_MULTIPLIER = builder.defineInRange("generic_posture_base_multiplier", 1.0D, 0.0D, 100.0D);
         POSTURE_RECOVERY_DELAY_TICKS = builder.defineInRange("posture_recovery_delay_ticks", 20, 0, 72000);
-        DEFAULT_STAGGER_DURATION_TICKS = builder.defineInRange("default_stagger_duration_ticks", 10, 0, 72000);
+        DEFAULT_STAGGER_DURATION_TICKS = builder.defineInRange("default_stagger_duration_ticks", 18, 0, 72000);
         DEFAULT_STAGGER_COOLDOWN_TICKS = builder.defineInRange("default_stagger_cooldown_ticks", 50, 0, 72000);
+        POSTURE_AFTER_BREAK_RATIO = builder.defineInRange("posture_after_break_ratio", 0.2D, 0.0D, 1.0D);
         BOSS_HEALTH_THRESHOLD = builder.defineInRange("boss_health_threshold", 100.0D, 1.0D, 100000.0D);
         builder.pop();
 
@@ -88,6 +92,10 @@ public final class CombatConfig {
         return ENABLE_PVP_POSTURE.get();
     }
 
+    public static boolean playerPostureEnabled() {
+        return postureEnabled() && ENABLE_PLAYER_POSTURE.get();
+    }
+
     public static boolean hardStaggerEnabled() {
         return postureEnabled() && ENABLE_HARD_STAGGER.get();
     }
@@ -114,6 +122,10 @@ public final class CombatConfig {
 
     public static int defaultStaggerCooldownTicks() {
         return DEFAULT_STAGGER_COOLDOWN_TICKS.get();
+    }
+
+    public static float postureAfterBreakRatio() {
+        return POSTURE_AFTER_BREAK_RATIO.get().floatValue();
     }
 
     public static float bossHealthThreshold() {

@@ -11,7 +11,9 @@ import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.destroyermob.mobscombat.config.CombatConfig;
+import org.destroyermob.mobscombat.network.ModNetworking;
 
 public final class CombatEvents {
     private CombatEvents() {
@@ -37,6 +39,10 @@ public final class CombatEvents {
             return;
         }
         EntityCombatProfile profile = CombatProfileResolver.resolve(attacker).profile();
+        if (state.isHardStaggered()) {
+            event.setNewDamage(0.0F);
+            return;
+        }
         event.setNewDamage(event.getNewDamage() * profile.outgoingDamageMultiplierWhileStaggered());
     }
 
@@ -52,6 +58,14 @@ public final class CombatEvents {
             if (attackerProfile.enabled() && attackerProfile.recoveryWindowTicks() > 0) {
                 CombatStateManager.getOrCreate(attacker).markRecovery(attackerProfile.recoveryWindowTicks());
             }
+        }
+
+        if (target instanceof ServerPlayer playerTarget && source instanceof LivingEntity attacker && !(attacker instanceof ServerPlayer)) {
+            ItemStack attackerWeapon = event.getSource().getWeaponItem();
+            if (attackerWeapon == null || attackerWeapon.isEmpty()) {
+                attackerWeapon = attacker.getMainHandItem();
+            }
+            PostureSystem.applyIncomingPostureDamage(attacker, playerTarget, attackerWeapon, event.getNewDamage());
         }
 
         if (!(source instanceof ServerPlayer player) || event.getSource().getDirectEntity() != player) {
@@ -73,8 +87,22 @@ public final class CombatEvents {
 
     public static void onUseItemStart(LivingEntityUseItemEvent.Start event) {
         LivingEntity entity = event.getEntity();
+        if (!entity.level().isClientSide() && isStaggered(entity)) {
+            event.setCanceled(true);
+            event.setDuration(0);
+            return;
+        }
         if (!entity.level().isClientSide() && WeaponProfileResolver.isShieldLike(event.getItem())) {
             CombatStateManager.getOrCreate(entity).markShieldRaised(entity.tickCount);
+        }
+    }
+
+    public static void onUseItemTick(LivingEntityUseItemEvent.Tick event) {
+        LivingEntity entity = event.getEntity();
+        if (!entity.level().isClientSide() && isStaggered(entity)) {
+            event.setCanceled(true);
+            event.setDuration(0);
+            entity.stopUsingItem();
         }
     }
 
@@ -91,6 +119,16 @@ public final class CombatEvents {
         PostureSystem.applyHardStaggerMotionSafety(entity, profile, state);
     }
 
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide() || player.tickCount % 5 != 0) {
+            return;
+        }
+        CombatState state = CombatStateManager.get(player);
+        if (state != null && state.maxPosture() > 0.0F) {
+            ModNetworking.sendPlayerPosture(player, state.currentPosture(), state.maxPosture());
+        }
+    }
+
     public static void onLivingDeath(LivingDeathEvent event) {
         if (!event.getEntity().level().isClientSide()) {
             CombatStateManager.remove(event.getEntity());
@@ -101,5 +139,10 @@ public final class CombatEvents {
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof LivingEntity living) {
             CombatStateManager.remove(living);
         }
+    }
+
+    private static boolean isStaggered(LivingEntity entity) {
+        CombatState state = CombatStateManager.get(entity);
+        return state != null && state.isStaggered();
     }
 }

@@ -14,6 +14,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.destroyermob.mobscombat.config.CombatConfig;
+import org.destroyermob.mobscombat.network.ModNetworking;
 
 public final class PostureSystem {
     private PostureSystem() {
@@ -71,6 +72,44 @@ public final class PostureSystem {
         applyPostureDamage(source, target, targetProfile, syntheticProfile, targetState, amount * targetProfile.postureMultiplierFor(kind), resolvedTarget.source(), "synthetic");
     }
 
+    public static void applyIncomingPostureDamage(LivingEntity source, LivingEntity target, ItemStack weapon, float healthDamage) {
+        if (!CombatConfig.postureEnabled() || target.level().isClientSide() || source == target || healthDamage <= 0.0F) {
+            return;
+        }
+        if (target instanceof Player && !CombatConfig.playerPostureEnabled()) {
+            return;
+        }
+
+        ResolvedEntityProfile resolvedTarget = CombatProfileResolver.resolve(target);
+        EntityCombatProfile targetProfile = resolvedTarget.profile();
+        if (!targetProfile.enabled()) {
+            return;
+        }
+
+        CombatState targetState = CombatStateManager.getOrCreate(target);
+        targetState.syncPostureMax(maxPosture(target, targetProfile));
+        ResolvedWeaponProfile resolvedWeapon = WeaponProfileResolver.resolve(weapon);
+        WeaponCombatProfile weaponProfile = resolvedWeapon.recognizedWeapon()
+                ? resolvedWeapon.profile()
+                : new WeaponCombatProfile(
+                        CombatDamageKind.GENERIC,
+                        Math.max(3.0F, healthDamage * 3.0F),
+                        Math.max(3.0F, healthDamage * 3.0F),
+                        1.0F,
+                        1.0F,
+                        1.0F,
+                        1.0F,
+                        1.0F,
+                        false,
+                        true
+                );
+        float postureDamage = weaponProfile.postureDamage() * targetProfile.postureMultiplierFor(weaponProfile.damageKind());
+        applyPostureDamage(source, target, targetProfile, weaponProfile, targetState, postureDamage, resolvedTarget.source(), resolvedWeapon.recognizedWeapon() ? resolvedWeapon.source() : "incoming_damage");
+        if (target instanceof ServerPlayer player) {
+            ModNetworking.sendPlayerPosture(player, targetState.currentPosture(), targetState.maxPosture());
+        }
+    }
+
     public static float maxPosture(LivingEntity entity, EntityCombatProfile profile) {
         float health = maxHealth(entity);
         float base = health * profile.postureMultiplier() + profile.flatPostureBonus();
@@ -78,11 +117,15 @@ public final class PostureSystem {
     }
 
     public static void applyHardStaggerMotionSafety(LivingEntity entity, EntityCombatProfile profile, CombatState state) {
-        if (!state.isHardStaggered()) {
+        if (!state.isStaggered()) {
             return;
         }
         if (entity instanceof Mob mob) {
             mob.getNavigation().stop();
+            mob.setAggressive(false);
+        }
+        if (entity.isUsingItem()) {
+            entity.stopUsingItem();
         }
         double multiplier = Mth.clamp(profile.movementSpeedMultiplierWhileStaggered(), 0.0F, 1.0F);
         entity.setDeltaMovement(entity.getDeltaMovement().multiply(multiplier, 1.0D, multiplier));
@@ -117,7 +160,7 @@ public final class PostureSystem {
         }
 
         boolean hard = canHardStagger(target, targetProfile, weaponProfile);
-        int duration = hard ? targetProfile.staggerDurationTicks() : Math.min(targetProfile.staggerDurationTicks(), targetProfile.bossLike() ? 4 : 8);
+        int duration = staggerDuration(targetProfile, hard);
         int cooldown = Math.max(targetProfile.staggerCooldownTicks(), CombatConfig.defaultStaggerCooldownTicks());
         targetState.stagger(Math.max(1, duration), cooldown, hard);
         targetState.restorePostureAfterBreak();
@@ -152,6 +195,15 @@ public final class PostureSystem {
             return false;
         }
         return !target.getType().is(CombatTags.EntityTypes.NO_HARD_STAGGER);
+    }
+
+    private static int staggerDuration(EntityCombatProfile profile, boolean hard) {
+        int profileDuration = hard ? profile.staggerDurationTicks() : Math.min(profile.staggerDurationTicks(), profile.bossLike() ? 4 : 8);
+        if (profile.bossLike()) {
+            return profileDuration;
+        }
+        int duration = Math.max(profileDuration, CombatConfig.defaultStaggerDurationTicks());
+        return hard ? duration + 6 : duration;
     }
 
     private static float maxHealth(LivingEntity entity) {
