@@ -6,8 +6,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -23,13 +26,26 @@ public final class CombatEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || !(event.getTarget() instanceof LivingEntity target)) {
             return;
         }
+        if (isStaggered(player)) {
+            event.setCanceled(true);
+            return;
+        }
+        DualWieldSystem.prepareAttack(player, target);
         CombatStateManager.getOrCreate(player).recordAttackIntent(target.getId(), player.getAttackStrengthScale(0.0F), player.tickCount);
+    }
+
+    public static void adjustDualWieldIncomingDamage(LivingIncomingDamageEvent event) {
+        DualWieldSystem.adjustIncomingDamage(event);
     }
 
     public static void reduceStaggeredOutgoingDamage(LivingDamageEvent.Pre event) {
         if (!CombatConfig.combatOverhaulEnabled()) {
             return;
         }
+        if (ParrySystem.tryParry(event)) {
+            return;
+        }
+        StealthSystem.tryApplyStealthStrike(event);
         Entity source = event.getSource().getEntity();
         if (!(source instanceof LivingEntity attacker) || attacker.level().isClientSide()) {
             return;
@@ -78,7 +94,19 @@ public final class CombatEvents {
         CombatState playerState = CombatStateManager.getOrCreate(player);
         float attackStrength = playerState.consumeAttackStrengthFor(target.getId(), player.tickCount);
         StrikeTiming timing = StrikeTiming.fromAttackStrength(attackStrength, playerState.counterWindowTicks() > 0);
-        PostureSystem.applyPlayerMeleePosture(player, target, weapon, timing);
+        float postureMultiplier = playerState.consumeStealthStrikeFor(target.getId(), player.tickCount)
+                ? CombatConfig.stealthStrikePostureMultiplier()
+                : 1.0F;
+        postureMultiplier *= DualWieldSystem.postureMultiplier(player, target.getId());
+        PostureSystem.applyPlayerMeleePosture(player, target, weapon, timing, postureMultiplier);
+    }
+
+    public static void onLivingChangeTarget(LivingChangeTargetEvent event) {
+        StealthSystem.onLivingChangeTarget(event);
+    }
+
+    public static void onLivingVisibility(LivingEvent.LivingVisibilityEvent event) {
+        StealthSystem.onLivingVisibility(event);
     }
 
     public static void onShieldBlock(LivingShieldBlockEvent event) {
@@ -120,7 +148,11 @@ public final class CombatEvents {
     }
 
     public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide() || player.tickCount % 5 != 0) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide()) {
+            return;
+        }
+        DualWieldSystem.tick(player);
+        if (player.tickCount % 5 != 0) {
             return;
         }
         CombatState state = CombatStateManager.get(player);
@@ -131,12 +163,14 @@ public final class CombatEvents {
 
     public static void onLivingDeath(LivingDeathEvent event) {
         if (!event.getEntity().level().isClientSide()) {
+            DualWieldSystem.clear(event.getEntity());
             CombatStateManager.remove(event.getEntity());
         }
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof LivingEntity living) {
+            DualWieldSystem.clear(living);
             CombatStateManager.remove(living);
         }
     }

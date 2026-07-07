@@ -26,8 +26,11 @@ public final class MobsCombat {
 
         NeoForge.EVENT_BUS.addListener(this::addReloadListeners);
         NeoForge.EVENT_BUS.addListener(CombatEvents::recordAttackIntent);
+        NeoForge.EVENT_BUS.addListener(CombatEvents::adjustDualWieldIncomingDamage);
         NeoForge.EVENT_BUS.addListener(CombatEvents::reduceStaggeredOutgoingDamage);
         NeoForge.EVENT_BUS.addListener(CombatEvents::afterLivingDamage);
+        NeoForge.EVENT_BUS.addListener(CombatEvents::onLivingChangeTarget);
+        NeoForge.EVENT_BUS.addListener(CombatEvents::onLivingVisibility);
         NeoForge.EVENT_BUS.addListener(CombatEvents::onShieldBlock);
         NeoForge.EVENT_BUS.addListener(CombatEvents::onUseItemStart);
         NeoForge.EVENT_BUS.addListener(CombatEvents::onUseItemTick);

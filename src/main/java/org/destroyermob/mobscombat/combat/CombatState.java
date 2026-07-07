@@ -14,7 +14,9 @@ public final class CombatState {
     private int recoveryTicks;
     private int counterWindowTicks;
     private int recentPerfectBlockTicks;
+    private int recentParryTicks;
     private int recentGuardBreakTicks;
+    private int recentStealthStrikeTicks;
     private int ticksSinceLastDamaged = 72000;
     private int ticksSinceLastAttack = 72000;
     private int ticksSinceGuardPressure = 72000;
@@ -23,6 +25,8 @@ public final class CombatState {
     private int lastAttackTargetId = -1;
     private float lastAttackStrength = 1.0F;
     private int lastAttackTick = -72000;
+    private int lastStealthStrikeTargetId = -1;
+    private int lastStealthStrikeTick = -72000;
     private int shieldRaisedAtTick = -72000;
 
     public CombatState() {
@@ -39,7 +43,9 @@ public final class CombatState {
         this.recoveryTicks = decrementTimer(this.recoveryTicks);
         this.counterWindowTicks = decrementTimer(this.counterWindowTicks);
         this.recentPerfectBlockTicks = decrementTimer(this.recentPerfectBlockTicks);
+        this.recentParryTicks = decrementTimer(this.recentParryTicks);
         this.recentGuardBreakTicks = decrementTimer(this.recentGuardBreakTicks);
+        this.recentStealthStrikeTicks = decrementTimer(this.recentStealthStrikeTicks);
 
         if (this.staggerTicks <= 0) {
             this.softStaggered = false;
@@ -53,6 +59,9 @@ public final class CombatState {
         }
         if (entity.tickCount - this.lastAttackTick > 10) {
             clearAttackIntent();
+        }
+        if (entity.tickCount - this.lastStealthStrikeTick > 10) {
+            clearStealthStrike();
         }
     }
 
@@ -137,6 +146,14 @@ public final class CombatState {
         return this.counterWindowTicks;
     }
 
+    public int recentParryTicks() {
+        return this.recentParryTicks;
+    }
+
+    public int recentStealthStrikeTicks() {
+        return this.recentStealthStrikeTicks;
+    }
+
     public boolean isStaggered() {
         return this.staggerTicks > 0 && (this.softStaggered || this.hardStaggered);
     }
@@ -162,6 +179,11 @@ public final class CombatState {
         this.counterWindowTicks = Math.max(this.counterWindowTicks, CombatConfig.counterWindowTicks());
     }
 
+    public void markParry() {
+        this.recentParryTicks = 10;
+        this.counterWindowTicks = Math.max(this.counterWindowTicks, CombatConfig.counterWindowTicks());
+    }
+
     public void recordAttackIntent(int targetId, float attackStrength, int tick) {
         this.lastAttackTargetId = targetId;
         this.lastAttackStrength = Mth.clamp(attackStrength, 0.0F, 1.5F);
@@ -177,6 +199,28 @@ public final class CombatState {
         return 1.0F;
     }
 
+    public boolean consumeParryIntentFor(int targetId, int tick, int windowTicks) {
+        if (this.lastAttackTargetId == targetId && tick - this.lastAttackTick <= windowTicks) {
+            clearAttackIntent();
+            return true;
+        }
+        return false;
+    }
+
+    public void markStealthStrike(int targetId, int tick) {
+        this.lastStealthStrikeTargetId = targetId;
+        this.lastStealthStrikeTick = tick;
+        this.recentStealthStrikeTicks = 10;
+    }
+
+    public boolean consumeStealthStrikeFor(int targetId, int tick) {
+        if (this.lastStealthStrikeTargetId == targetId && tick - this.lastStealthStrikeTick <= 10) {
+            clearStealthStrike();
+            return true;
+        }
+        return false;
+    }
+
     public void markShieldRaised(int tick) {
         this.shieldRaisedAtTick = tick;
     }
@@ -188,6 +232,11 @@ public final class CombatState {
     private void clearAttackIntent() {
         this.lastAttackTargetId = -1;
         this.lastAttackStrength = 1.0F;
+    }
+
+    private void clearStealthStrike() {
+        this.lastStealthStrikeTargetId = -1;
+        this.lastStealthStrikeTick = -72000;
     }
 
     private static int decrementTimer(int value) {

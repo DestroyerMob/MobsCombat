@@ -2,6 +2,7 @@ package org.destroyermob.mobscombat.combat;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -10,6 +11,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 import org.destroyermob.mobscombat.config.CombatConfig;
+import org.destroyermob.mobscombat.network.CombatFeedbackType;
+import org.destroyermob.mobscombat.network.ModNetworking;
 
 public final class GuardSystem {
     private static final float PERFECT_BLOCK_POSTURE_DAMAGE = 6.0F;
@@ -40,6 +43,7 @@ public final class GuardSystem {
             state.markPerfectBlock();
             event.setShieldDamage(0.0F);
             applyPerfectBlockFeedback(player, event.getDamageSource().getEntity());
+            sendFeedback(player, CombatFeedbackType.PERFECT_BLOCK);
             return;
         }
 
@@ -50,6 +54,7 @@ public final class GuardSystem {
             event.setShieldDamage(0.0F);
             player.getCooldowns().addCooldown(shield.getItem(), CombatConfig.guardBreakTicks());
             playGuardBreak(player);
+            sendFeedback(player, CombatFeedbackType.GUARD_BREAK);
         } else {
             event.setShieldDamage(Math.max(1.0F, guardCost * 0.08F));
         }
@@ -113,6 +118,12 @@ public final class GuardSystem {
                     0.35D,
                     0.08D
             );
+        }
+    }
+
+    private static void sendFeedback(Player player, CombatFeedbackType type) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            ModNetworking.sendCombatFeedback(serverPlayer, type);
         }
     }
 }

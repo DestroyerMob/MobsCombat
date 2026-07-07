@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "org.destroyermob.mobscombat.mixin",
+  "refmap": "mobscombat.refmap.json",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "LivingEntityWeaponItemMixin",
+    "PlayerAttackHandMixin"
+  ],
+  "client": [
+    "client.MinecraftStartAttackMixin",
+    "client.PunchyAnimationManagerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

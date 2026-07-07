@@ -21,6 +21,10 @@ public final class PostureSystem {
     }
 
     public static void applyPlayerMeleePosture(ServerPlayer attacker, LivingEntity target, ItemStack weapon, StrikeTiming timing) {
+        applyPlayerMeleePosture(attacker, target, weapon, timing, 1.0F);
+    }
+
+    public static void applyPlayerMeleePosture(ServerPlayer attacker, LivingEntity target, ItemStack weapon, StrikeTiming timing, float postureMultiplier) {
         if (!CombatConfig.postureEnabled() || target.level().isClientSide() || target == attacker) {
             return;
         }
@@ -48,6 +52,7 @@ public final class PostureSystem {
         WeaponCombatProfile weaponProfile = resolvedWeapon.profile();
 
         float postureDamage = weaponProfile.postureDamage() * effectiveTiming.postureMultiplier(weaponProfile);
+        postureDamage *= Math.max(0.0F, postureMultiplier);
         postureDamage *= targetProfile.postureMultiplierFor(weaponProfile.damageKind());
         if (targetState.recoveryTicks() > 0 && CombatConfig.recoveryWindowsEnabled()) {
             postureDamage *= targetProfile.recoveryWindowPostureMultiplier();
@@ -93,8 +98,8 @@ public final class PostureSystem {
                 ? resolvedWeapon.profile()
                 : new WeaponCombatProfile(
                         CombatDamageKind.GENERIC,
-                        Math.max(3.0F, healthDamage * 3.0F),
-                        Math.max(3.0F, healthDamage * 3.0F),
+                        Math.max(2.0F, healthDamage * 1.5F),
+                        Math.max(2.0F, healthDamage * 1.5F),
                         1.0F,
                         1.0F,
                         1.0F,
@@ -112,7 +117,8 @@ public final class PostureSystem {
 
     public static float maxPosture(LivingEntity entity, EntityCombatProfile profile) {
         float health = maxHealth(entity);
-        float base = health * profile.postureMultiplier() + profile.flatPostureBonus();
+        float armorBonus = armor(entity) * 1.5F + knockbackResistance(entity) * 20.0F;
+        float base = health * profile.postureMultiplier() + profile.flatPostureBonus() + armorBonus;
         return Math.max(4.0F, base * CombatConfig.genericPostureBaseMultiplier());
     }
 
@@ -123,6 +129,9 @@ public final class PostureSystem {
         if (entity instanceof Mob mob) {
             mob.getNavigation().stop();
             mob.setAggressive(false);
+            if (state.isHardStaggered()) {
+                mob.setTarget(null);
+            }
         }
         if (entity.isUsingItem()) {
             entity.stopUsingItem();
@@ -209,6 +218,16 @@ public final class PostureSystem {
     private static float maxHealth(LivingEntity entity) {
         AttributeInstance instance = entity.getAttribute(Attributes.MAX_HEALTH);
         return instance == null ? entity.getMaxHealth() : (float) instance.getValue();
+    }
+
+    private static float armor(LivingEntity entity) {
+        AttributeInstance instance = entity.getAttribute(Attributes.ARMOR);
+        return instance == null ? 0.0F : (float) instance.getValue();
+    }
+
+    private static float knockbackResistance(LivingEntity entity) {
+        AttributeInstance instance = entity.getAttribute(Attributes.KNOCKBACK_RESISTANCE);
+        return instance == null ? 0.0F : (float) instance.getValue();
     }
 
     private static String shortId(LivingEntity entity) {
