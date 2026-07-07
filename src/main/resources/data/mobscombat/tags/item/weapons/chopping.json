@@ -1,0 +1,18 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:axes",
+    {
+      "id": "#betterenchanting:tools/axes",
+      "required": false
+    },
+    {
+      "id": "#mobscombat:weapons/battle_axes",
+      "required": false
+    },
+    {
+      "id": "#mobscombat:weapons/machetes",
+      "required": false
+    }
+  ]
+}

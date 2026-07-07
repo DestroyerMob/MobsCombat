@@ -1,0 +1,29 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mobsmoreweapons:wooden_machete",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:stone_machete",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:iron_machete",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:golden_machete",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:diamond_machete",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:netherite_machete",
+      "required": false
+    }
+  ]
+}

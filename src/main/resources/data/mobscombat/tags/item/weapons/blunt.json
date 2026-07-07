@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#mobscombat:weapons/maces",
+      "required": false
+    }
+  ]
+}

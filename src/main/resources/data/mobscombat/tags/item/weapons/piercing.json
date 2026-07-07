@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#mobscombat:weapons/daggers",
+      "required": false
+    },
+    {
+      "id": "#mobscombat:weapons/spears",
+      "required": false
+    }
+  ]
+}

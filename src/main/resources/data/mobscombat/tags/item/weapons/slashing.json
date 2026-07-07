@@ -1,0 +1,18 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:swords",
+    {
+      "id": "#betterenchanting:weapons/swords",
+      "required": false
+    },
+    {
+      "id": "#mobscombat:weapons/greatswords",
+      "required": false
+    },
+    {
+      "id": "#mobscombat:weapons/machetes",
+      "required": false
+    }
+  ]
+}

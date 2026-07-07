@@ -1,0 +1,169 @@
+package org.destroyermob.mobscombat.combat;
+
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import org.destroyermob.mobscombat.config.CombatConfig;
+
+public final class PostureSystem {
+    private PostureSystem() {
+    }
+
+    public static void applyPlayerMeleePosture(ServerPlayer attacker, LivingEntity target, ItemStack weapon, StrikeTiming timing) {
+        if (!CombatConfig.postureEnabled() || target.level().isClientSide() || target == attacker) {
+            return;
+        }
+
+        ResolvedEntityProfile resolvedTarget = CombatProfileResolver.resolve(target);
+        EntityCombatProfile targetProfile = resolvedTarget.profile();
+        if (!targetProfile.enabled()) {
+            return;
+        }
+        if (target instanceof Player && !CombatConfig.pvpPostureEnabled()) {
+            return;
+        }
+
+        ResolvedWeaponProfile resolvedWeapon = WeaponProfileResolver.resolve(weapon);
+        if (!resolvedWeapon.recognizedWeapon()) {
+            return;
+        }
+
+        CombatState targetState = CombatStateManager.getOrCreate(target);
+        targetState.syncPostureMax(maxPosture(target, targetProfile));
+
+        CombatState attackerState = CombatStateManager.getOrCreate(attacker);
+        boolean counterWindow = attackerState.counterWindowTicks() > 0;
+        StrikeTiming effectiveTiming = StrikeTiming.fromAttackStrength(timing == StrikeTiming.QUICK ? 0.0F : 1.0F, counterWindow);
+        WeaponCombatProfile weaponProfile = resolvedWeapon.profile();
+
+        float postureDamage = weaponProfile.postureDamage() * effectiveTiming.postureMultiplier(weaponProfile);
+        postureDamage *= targetProfile.postureMultiplierFor(weaponProfile.damageKind());
+        if (targetState.recoveryTicks() > 0 && CombatConfig.recoveryWindowsEnabled()) {
+            postureDamage *= targetProfile.recoveryWindowPostureMultiplier();
+            postureDamage *= weaponProfile.recoveryPunishMultiplier();
+        }
+
+        applyPostureDamage(attacker, target, targetProfile, weaponProfile, targetState, postureDamage, resolvedTarget.source(), resolvedWeapon.source());
+    }
+
+    public static void applyFlatPostureDamage(LivingEntity source, LivingEntity target, float amount, CombatDamageKind kind, boolean canHardStagger) {
+        if (!CombatConfig.postureEnabled() || target.level().isClientSide() || source == target) {
+            return;
+        }
+        ResolvedEntityProfile resolvedTarget = CombatProfileResolver.resolve(target);
+        EntityCombatProfile targetProfile = resolvedTarget.profile();
+        if (!targetProfile.enabled()) {
+            return;
+        }
+        CombatState targetState = CombatStateManager.getOrCreate(target);
+        targetState.syncPostureMax(maxPosture(target, targetProfile));
+        WeaponCombatProfile syntheticProfile = new WeaponCombatProfile(kind, amount, amount, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, canHardStagger, true);
+        applyPostureDamage(source, target, targetProfile, syntheticProfile, targetState, amount * targetProfile.postureMultiplierFor(kind), resolvedTarget.source(), "synthetic");
+    }
+
+    public static float maxPosture(LivingEntity entity, EntityCombatProfile profile) {
+        float health = maxHealth(entity);
+        float base = health * profile.postureMultiplier() + profile.flatPostureBonus();
+        return Math.max(4.0F, base * CombatConfig.genericPostureBaseMultiplier());
+    }
+
+    public static void applyHardStaggerMotionSafety(LivingEntity entity, EntityCombatProfile profile, CombatState state) {
+        if (!state.isHardStaggered()) {
+            return;
+        }
+        if (entity instanceof Mob mob) {
+            mob.getNavigation().stop();
+        }
+        double multiplier = Mth.clamp(profile.movementSpeedMultiplierWhileStaggered(), 0.0F, 1.0F);
+        entity.setDeltaMovement(entity.getDeltaMovement().multiply(multiplier, 1.0D, multiplier));
+    }
+
+    private static void applyPostureDamage(
+            LivingEntity source,
+            LivingEntity target,
+            EntityCombatProfile targetProfile,
+            WeaponCombatProfile weaponProfile,
+            CombatState targetState,
+            float postureDamage,
+            String targetProfileSource,
+            String weaponProfileSource
+    ) {
+        if (postureDamage <= 0.0F) {
+            return;
+        }
+        targetState.damagePosture(postureDamage);
+        if (CombatConfig.debugMessagesEnabled() && source instanceof ServerPlayer player) {
+            player.sendSystemMessage(Component.literal("Posture " + shortId(target) + ": -" + format(postureDamage) + " -> " + format(targetState.currentPosture()) + "/" + format(targetState.maxPosture()) + " (" + targetProfileSource + ", " + weaponProfileSource + ")"));
+        }
+        if (targetState.currentPosture() <= 0.0F) {
+            breakPosture(source, target, targetProfile, weaponProfile, targetState);
+        }
+    }
+
+    private static void breakPosture(LivingEntity source, LivingEntity target, EntityCombatProfile targetProfile, WeaponCombatProfile weaponProfile, CombatState targetState) {
+        if (targetState.staggerCooldownTicks() > 0) {
+            targetState.restorePostureAfterBreak();
+            return;
+        }
+
+        boolean hard = canHardStagger(target, targetProfile, weaponProfile);
+        int duration = hard ? targetProfile.staggerDurationTicks() : Math.min(targetProfile.staggerDurationTicks(), targetProfile.bossLike() ? 4 : 8);
+        int cooldown = Math.max(targetProfile.staggerCooldownTicks(), CombatConfig.defaultStaggerCooldownTicks());
+        targetState.stagger(Math.max(1, duration), cooldown, hard);
+        targetState.restorePostureAfterBreak();
+
+        if (target.level() instanceof ServerLevel level) {
+            level.sendParticles(
+                    hard ? ParticleTypes.CRIT : ParticleTypes.DAMAGE_INDICATOR,
+                    target.getX(),
+                    target.getY() + target.getBbHeight() * 0.6D,
+                    target.getZ(),
+                    hard ? 10 : 5,
+                    Math.max(target.getBbWidth() * 0.35D, 0.15D),
+                    Math.max(target.getBbHeight() * 0.25D, 0.15D),
+                    Math.max(target.getBbWidth() * 0.35D, 0.15D),
+                    0.08D
+            );
+            level.playSound(null, target.blockPosition(), hard ? SoundEvents.SHIELD_BREAK : SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.6F, hard ? 0.9F : 1.25F);
+        }
+        if (CombatConfig.debugMessagesEnabled() && source instanceof ServerPlayer player) {
+            player.sendSystemMessage(Component.literal((hard ? "Hard" : "Soft") + " posture break: " + shortId(target)));
+        }
+    }
+
+    private static boolean canHardStagger(LivingEntity target, EntityCombatProfile profile, WeaponCombatProfile weaponProfile) {
+        if (!CombatConfig.hardStaggerEnabled() || !weaponProfile.canHardStagger() || !profile.allowsHardStagger()) {
+            return false;
+        }
+        if (target instanceof Player) {
+            return false;
+        }
+        if (profile.bossLike() && !CombatConfig.bossHardStaggerEnabled()) {
+            return false;
+        }
+        return !target.getType().is(CombatTags.EntityTypes.NO_HARD_STAGGER);
+    }
+
+    private static float maxHealth(LivingEntity entity) {
+        AttributeInstance instance = entity.getAttribute(Attributes.MAX_HEALTH);
+        return instance == null ? entity.getMaxHealth() : (float) instance.getValue();
+    }
+
+    private static String shortId(LivingEntity entity) {
+        return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
+    }
+
+    private static String format(float value) {
+        return String.format(java.util.Locale.ROOT, "%.1f", value);
+    }
+}

@@ -1,0 +1,29 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mobsmoreweapons:wooden_great_sword",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:stone_great_sword",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:iron_great_sword",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:golden_great_sword",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:diamond_great_sword",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:netherite_great_sword",
+      "required": false
+    }
+  ]
+}

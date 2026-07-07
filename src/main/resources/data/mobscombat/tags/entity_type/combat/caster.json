@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:witch",
+    "minecraft:evoker",
+    "minecraft:blaze",
+    "minecraft:ghast"
+  ]
+}

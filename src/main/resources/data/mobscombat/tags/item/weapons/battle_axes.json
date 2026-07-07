@@ -1,0 +1,29 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mobsmoreweapons:wooden_battle_axe",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:stone_battle_axe",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:iron_battle_axe",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:golden_battle_axe",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:diamond_battle_axe",
+      "required": false
+    },
+    {
+      "id": "mobsmoreweapons:netherite_battle_axe",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+package org.destroyermob.mobscombat.combat;
+
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import org.destroyermob.mobscombat.config.CombatConfig;
+
+public final class CombatEvents {
+    private CombatEvents() {
+    }
+
+    public static void recordAttackIntent(AttackEntityEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !(event.getTarget() instanceof LivingEntity target)) {
+            return;
+        }
+        CombatStateManager.getOrCreate(player).recordAttackIntent(target.getId(), player.getAttackStrengthScale(0.0F), player.tickCount);
+    }
+
+    public static void reduceStaggeredOutgoingDamage(LivingDamageEvent.Pre event) {
+        if (!CombatConfig.combatOverhaulEnabled()) {
+            return;
+        }
+        Entity source = event.getSource().getEntity();
+        if (!(source instanceof LivingEntity attacker) || attacker.level().isClientSide()) {
+            return;
+        }
+        CombatState state = CombatStateManager.get(attacker);
+        if (state == null || !state.isStaggered()) {
+            return;
+        }
+        EntityCombatProfile profile = CombatProfileResolver.resolve(attacker).profile();
+        event.setNewDamage(event.getNewDamage() * profile.outgoingDamageMultiplierWhileStaggered());
+    }
+
+    public static void afterLivingDamage(LivingDamageEvent.Post event) {
+        LivingEntity target = event.getEntity();
+        if (!CombatConfig.combatOverhaulEnabled() || target.level().isClientSide() || event.getNewDamage() <= 0.0F) {
+            return;
+        }
+
+        Entity source = event.getSource().getEntity();
+        if (source instanceof LivingEntity attacker && attacker != target && CombatConfig.recoveryWindowsEnabled()) {
+            EntityCombatProfile attackerProfile = CombatProfileResolver.resolve(attacker).profile();
+            if (attackerProfile.enabled() && attackerProfile.recoveryWindowTicks() > 0) {
+                CombatStateManager.getOrCreate(attacker).markRecovery(attackerProfile.recoveryWindowTicks());
+            }
+        }
+
+        if (!(source instanceof ServerPlayer player) || event.getSource().getDirectEntity() != player) {
+            return;
+        }
+        ItemStack weapon = event.getSource().getWeaponItem();
+        if (weapon == null || weapon.isEmpty()) {
+            weapon = player.getMainHandItem();
+        }
+        CombatState playerState = CombatStateManager.getOrCreate(player);
+        float attackStrength = playerState.consumeAttackStrengthFor(target.getId(), player.tickCount);
+        StrikeTiming timing = StrikeTiming.fromAttackStrength(attackStrength, playerState.counterWindowTicks() > 0);
+        PostureSystem.applyPlayerMeleePosture(player, target, weapon, timing);
+    }
+
+    public static void onShieldBlock(LivingShieldBlockEvent event) {
+        GuardSystem.handleShieldBlock(event);
+    }
+
+    public static void onUseItemStart(LivingEntityUseItemEvent.Start event) {
+        LivingEntity entity = event.getEntity();
+        if (!entity.level().isClientSide() && WeaponProfileResolver.isShieldLike(event.getItem())) {
+            CombatStateManager.getOrCreate(entity).markShieldRaised(entity.tickCount);
+        }
+    }
+
+    public static void onEntityTick(EntityTickEvent.Post event) {
+        if (!(event.getEntity() instanceof LivingEntity entity) || entity.level().isClientSide()) {
+            return;
+        }
+        CombatState state = CombatStateManager.get(entity);
+        if (state == null) {
+            return;
+        }
+        EntityCombatProfile profile = CombatProfileResolver.resolve(entity).profile();
+        state.tick(entity, profile);
+        PostureSystem.applyHardStaggerMotionSafety(entity, profile, state);
+    }
+
+    public static void onLivingDeath(LivingDeathEvent event) {
+        if (!event.getEntity().level().isClientSide()) {
+            CombatStateManager.remove(event.getEntity());
+        }
+    }
+
+    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (!event.getLevel().isClientSide() && event.getEntity() instanceof LivingEntity living) {
+            CombatStateManager.remove(living);
+        }
+    }
+}

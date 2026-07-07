@@ -1,0 +1,18 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:mace",
+    {
+      "id": "#betterenchanting:weapons/maces",
+      "required": false
+    },
+    {
+      "id": "#c:tools/mace",
+      "required": false
+    },
+    {
+      "id": "#c:tools/maces",
+      "required": false
+    }
+  ]
+}
