@@ -1,6 +1,8 @@
 package org.destroyermob.mobscombat.mixin;
 
+import net.minecraft.core.Holder;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.destroyermob.mobscombat.combat.DualWieldSystem;
@@ -11,6 +13,28 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(Player.class)
 public abstract class PlayerAttackHandMixin {
+    @Redirect(
+            method = "attack",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/player/Player;getAttributeValue(Lnet/minecraft/core/Holder;)D"
+            )
+    )
+    private double mobscombat$getActiveAttackDamage(Player player, Holder<Attribute> attribute) {
+        return DualWieldSystem.getAttackDamageAttributeOverride(player, attribute, player.getAttributeValue(attribute));
+    }
+
+    @Redirect(
+            method = "attack",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/player/Player;getAttackStrengthScale(F)F"
+            )
+    )
+    private float mobscombat$getActiveAttackStrength(Player player, float partialTicks) {
+        return DualWieldSystem.getAttackStrengthScaleOverride(player, player.getAttackStrengthScale(partialTicks));
+    }
+
     @ModifyArg(
             method = "attack",
             at = @At(

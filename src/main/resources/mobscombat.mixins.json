@@ -1,9 +1,11 @@
 {
   "required": true,
   "package": "org.destroyermob.mobscombat.mixin",
+  "plugin": "org.destroyermob.mobscombat.mixin.MobsCombatMixinPlugin",
   "refmap": "mobscombat.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "CreeperFuseAccessor",
     "LivingEntityWeaponItemMixin",
     "PlayerAttackHandMixin"
   ],

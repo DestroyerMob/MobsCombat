@@ -99,7 +99,12 @@ public final class CombatState {
     }
 
     public void damagePosture(float amount) {
-        this.currentPosture = Math.max(0.0F, this.currentPosture - Math.max(0.0F, amount));
+        damagePosture(amount, 0.0F);
+    }
+
+    public void damagePosture(float amount, float minimumPosture) {
+        float floor = Mth.clamp(minimumPosture, 0.0F, this.maxPosture);
+        this.currentPosture = Math.max(floor, this.currentPosture - Math.max(0.0F, amount));
         this.ticksSinceLastDamaged = 0;
     }
 

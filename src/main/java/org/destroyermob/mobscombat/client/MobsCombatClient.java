@@ -70,6 +70,9 @@ public final class MobsCombatClient {
         if (minecraft.hitResult instanceof EntityHitResult hitResult && !(hitResult.getEntity() instanceof LivingEntity)) {
             return false;
         }
+        if (DualWieldSystem.shouldWaitForDualWieldCooldown(minecraft.player)) {
+            return true;
+        }
 
         InteractionHand attackHand = DualWieldSystem.claimClientAttackHand(minecraft.player);
         minecraft.player.swing(attackHand);

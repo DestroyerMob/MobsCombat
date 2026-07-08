@@ -3,15 +3,16 @@ package org.destroyermob.mobscombat.combat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -24,6 +25,7 @@ import org.destroyermob.mobscombat.config.CombatConfig;
 public final class DualWieldSystem {
     private static final ResourceLocation ATTACK_SPEED_MODIFIER_ID = MobsCombat.id("dual_wield_attack_speed");
     private static final int ACTIVE_ATTACK_TICKS = 3;
+    private static final float MIN_DUAL_WIELD_ATTACK_STRENGTH = 0.9F;
     private static final Map<UUID, Boolean> NEXT_OFFHAND_ATTACK = new HashMap<>();
     private static final Map<UUID, ActiveAttack> ACTIVE_ATTACKS = new HashMap<>();
     private static final Map<UUID, QueuedAttackHand> QUEUED_ATTACK_HANDS = new HashMap<>();
@@ -51,8 +53,8 @@ public final class DualWieldSystem {
             return;
         }
 
-        if (queued.finisher()) {
-            armMainHandAttack(player, target, true);
+        if (isDualWielding(player)) {
+            armMainHandAttack(player, target, queued.finisher());
         } else {
             ACTIVE_ATTACKS.remove(player.getUUID());
         }
@@ -71,7 +73,11 @@ public final class DualWieldSystem {
     }
 
     public static boolean shouldUseCustomAttack(Player player) {
-        return hasUsableOffhandWeapon(player);
+        return isDualWielding(player);
+    }
+
+    public static boolean shouldWaitForDualWieldCooldown(Player player) {
+        return isDualWielding(player) && player.getAttackStrengthScale(0.0F) < MIN_DUAL_WIELD_ATTACK_STRENGTH;
     }
 
     public static void handleAttack(ServerPlayer player, int targetId, boolean usingSecondaryAction, InteractionHand hand, boolean finisher) {
@@ -89,12 +95,17 @@ public final class DualWieldSystem {
             return;
         }
 
+        boolean dualWielding = isDualWielding(player);
+        if (!dualWielding) {
+            return;
+        }
+
         ItemStack weapon = hand == InteractionHand.OFF_HAND ? player.getOffhandItem() : player.getMainHandItem();
         if (!weapon.isItemEnabled(level.enabledFeatures()) || !isWeapon(weapon)) {
             return;
         }
 
-        boolean validFinisher = finisher && isDualWielding(player);
+        boolean validFinisher = finisher && dualWielding;
         QUEUED_ATTACK_HANDS.put(player.getUUID(), new QueuedAttackHand(targetId, player.tickCount, hand, validFinisher));
         player.setShiftKeyDown(usingSecondaryAction);
         if (hand == InteractionHand.OFF_HAND) {
@@ -102,8 +113,8 @@ public final class DualWieldSystem {
                 QUEUED_ATTACK_HANDS.remove(player.getUUID());
                 return;
             }
-        } else if (validFinisher) {
-            armMainHandAttack(player, target, true);
+        } else if (dualWielding) {
+            armMainHandAttack(player, target, validFinisher);
         }
         player.connection.handleInteract(ServerboundInteractPacket.createAttackPacket(target, usingSecondaryAction));
     }
@@ -148,33 +159,28 @@ public final class DualWieldSystem {
             return;
         }
 
-        float originalExpected = expectedAttackDamage(
-                attack.vanillaWeapon(),
-                event.getEntity(),
-                event.getSource(),
-                attack.originalAttributeDamage(),
-                attack.attackStrength()
-        );
-        float correctedExpected = expectedAttackDamage(
-                attack.weapon(),
-                event.getEntity(),
-                event.getSource(),
-                attack.weaponAttributeDamage(),
-                attack.attackStrength()
-        );
-        if (correctedExpected <= 0.0F) {
-            return;
+        float correctedAmount = event.getAmount();
+        if (attack.dualWielding()) {
+            correctedAmount *= CombatConfig.dualWieldDamageMultiplier();
         }
-
-        float multiplier = originalExpected > 1.0E-4F ? event.getAmount() / originalExpected : 1.0F;
-        if (!Float.isFinite(multiplier) || multiplier <= 0.0F) {
-            multiplier = 1.0F;
-        }
-        float correctedAmount = correctedExpected * multiplier;
         if (attack.finisher()) {
             correctedAmount *= CombatConfig.dualWieldFinisherDamageMultiplier();
         }
         event.setAmount(Math.max(0.0F, correctedAmount));
+    }
+
+    public static double getAttackDamageAttributeOverride(Player player, Holder<Attribute> attribute, double originalValue) {
+        if (!CombatConfig.dualWieldEnabled() || !Attributes.ATTACK_DAMAGE.equals(attribute)) {
+            return originalValue;
+        }
+
+        ActiveAttack attack = getActiveAttack(player);
+        return attack == null ? originalValue : attack.weaponAttributeDamage();
+    }
+
+    public static float getAttackStrengthScaleOverride(Player player, float originalValue) {
+        ActiveAttack attack = getActiveAttack(player);
+        return attack != null && attack.dualWielding() ? 1.0F : originalValue;
     }
 
     public static float postureMultiplier(ServerPlayer player, int targetId) {
@@ -256,7 +262,7 @@ public final class DualWieldSystem {
         }
 
         updateNextAttackHand(player, mainWeapon, true);
-        ACTIVE_ATTACKS.put(player.getUUID(), ActiveAttack.capture(player, target, mainHand, offHand, InteractionHand.OFF_HAND, finisher));
+        ACTIVE_ATTACKS.put(player.getUUID(), ActiveAttack.capture(player, target, mainHand, offHand, InteractionHand.OFF_HAND, mainWeapon, finisher));
         return true;
     }
 
@@ -268,7 +274,7 @@ public final class DualWieldSystem {
             return false;
         }
 
-        ACTIVE_ATTACKS.put(player.getUUID(), ActiveAttack.capture(player, target, mainHand, mainHand, InteractionHand.MAIN_HAND, finisher));
+        ACTIVE_ATTACKS.put(player.getUUID(), ActiveAttack.capture(player, target, mainHand, mainHand, InteractionHand.MAIN_HAND, isWeapon(player.getOffhandItem()), finisher));
         return true;
     }
 
@@ -297,12 +303,6 @@ public final class DualWieldSystem {
         return attack.targetId() == targetId ? attack : null;
     }
 
-    private static float expectedAttackDamage(ItemStack weapon, LivingEntity target, DamageSource source, float attributeDamage, float attackStrength) {
-        float cooldownMultiplier = 0.2F + attackStrength * attackStrength * 0.8F;
-        float scaledDamage = attributeDamage * cooldownMultiplier;
-        return scaledDamage + weapon.getItem().getAttackDamageBonus(target, scaledDamage, source);
-    }
-
     private static float selectedWeaponAttributeDamage(ServerPlayer player, ItemStack currentMainHand, ItemStack selectedWeapon) {
         float currentAttributeDamage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
         float currentMainHandDamage = stackAttackDamage(player, currentMainHand);
@@ -316,7 +316,27 @@ public final class DualWieldSystem {
         if (stack == null || stack.isEmpty()) {
             return (float) baseDamage;
         }
-        return (float) stack.getAttributeModifiers().compute(baseDamage, EquipmentSlot.MAINHAND);
+        return (float) computeStackAttackDamage(stack, baseDamage);
+    }
+
+    private static double computeStackAttackDamage(ItemStack stack, double baseDamage) {
+        double[] addValue = {0.0D};
+        double[] addMultipliedBase = {0.0D};
+        double[] multipliedTotal = {1.0D};
+        stack.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
+            if (!Attributes.ATTACK_DAMAGE.equals(attribute)) {
+                return;
+            }
+            switch (modifier.operation()) {
+                case ADD_VALUE -> addValue[0] += modifier.amount();
+                case ADD_MULTIPLIED_BASE -> addMultipliedBase[0] += modifier.amount();
+                case ADD_MULTIPLIED_TOTAL -> multipliedTotal[0] *= 1.0D + modifier.amount();
+            }
+        });
+
+        double damageWithAdds = baseDamage + addValue[0];
+        double damageWithBaseMultipliers = damageWithAdds + damageWithAdds * addMultipliedBase[0];
+        return Math.max(0.0D, damageWithBaseMultipliers * multipliedTotal[0]);
     }
 
     private static void updateAttackSpeedModifier(ServerPlayer player) {
@@ -345,7 +365,7 @@ public final class DualWieldSystem {
         }
     }
 
-    private static boolean isDualWielding(ServerPlayer player) {
+    private static boolean isDualWielding(Player player) {
         return CombatConfig.dualWieldEnabled() && isWeapon(player.getMainHandItem()) && isWeapon(player.getOffhandItem());
     }
 
@@ -364,24 +384,18 @@ public final class DualWieldSystem {
     private record ActiveAttack(
             int targetId,
             int tick,
-            ItemStack weapon,
-            ItemStack vanillaWeapon,
             InteractionHand hand,
-            float originalAttributeDamage,
             float weaponAttributeDamage,
-            float attackStrength,
+            boolean dualWielding,
             boolean finisher
     ) {
-        static ActiveAttack capture(ServerPlayer player, LivingEntity target, ItemStack currentMainHand, ItemStack selectedWeapon, InteractionHand hand, boolean finisher) {
+        static ActiveAttack capture(ServerPlayer player, LivingEntity target, ItemStack currentMainHand, ItemStack selectedWeapon, InteractionHand hand, boolean dualWielding, boolean finisher) {
             return new ActiveAttack(
                     target.getId(),
                     player.tickCount,
-                    selectedWeapon.copy(),
-                    currentMainHand.copy(),
                     hand,
-                    (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE),
                     selectedWeaponAttributeDamage(player, currentMainHand, selectedWeapon),
-                    player.getAttackStrengthScale(0.5F),
+                    dualWielding,
                     finisher
             );
         }

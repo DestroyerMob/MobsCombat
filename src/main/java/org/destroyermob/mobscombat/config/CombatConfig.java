@@ -22,6 +22,7 @@ public final class CombatConfig {
     private static final ModConfigSpec.IntValue POSTURE_RECOVERY_DELAY_TICKS;
     private static final ModConfigSpec.IntValue DEFAULT_STAGGER_DURATION_TICKS;
     private static final ModConfigSpec.IntValue DEFAULT_STAGGER_COOLDOWN_TICKS;
+    private static final ModConfigSpec.DoubleValue STAGGER_COOLDOWN_POSTURE_DAMAGE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue POSTURE_AFTER_BREAK_RATIO;
     private static final ModConfigSpec.DoubleValue BOSS_HEALTH_THRESHOLD;
     private static final ModConfigSpec.IntValue PERFECT_BLOCK_WINDOW_TICKS;
@@ -31,6 +32,7 @@ public final class CombatConfig {
     private static final ModConfigSpec.DoubleValue PARRY_DAMAGE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue PARRY_POSTURE_DAMAGE;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_COOLDOWN_MULTIPLIER;
+    private static final ModConfigSpec.DoubleValue DUAL_WIELD_DAMAGE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_FINISHER_DAMAGE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_FINISHER_POSTURE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue GUARD_RECOVERY_PER_SECOND;
@@ -63,6 +65,7 @@ public final class CombatConfig {
         POSTURE_RECOVERY_DELAY_TICKS = builder.defineInRange("posture_recovery_delay_ticks", 20, 0, 72000);
         DEFAULT_STAGGER_DURATION_TICKS = builder.defineInRange("default_stagger_duration_ticks", 24, 0, 72000);
         DEFAULT_STAGGER_COOLDOWN_TICKS = builder.defineInRange("default_stagger_cooldown_ticks", 50, 0, 72000);
+        STAGGER_COOLDOWN_POSTURE_DAMAGE_MULTIPLIER = builder.defineInRange("stagger_cooldown_posture_damage_multiplier", 0.15D, 0.0D, 1.0D);
         POSTURE_AFTER_BREAK_RATIO = builder.defineInRange("posture_after_break_ratio", 0.2D, 0.0D, 1.0D);
         BOSS_HEALTH_THRESHOLD = builder.defineInRange("boss_health_threshold", 100.0D, 1.0D, 100000.0D);
         builder.pop();
@@ -79,6 +82,7 @@ public final class CombatConfig {
         PARRY_POSTURE_DAMAGE = builder.defineInRange("parry_posture_damage", 8.0D, 0.0D, 10000.0D);
         ENABLE_DUAL_WIELD = builder.define("enable_dual_wield", true);
         DUAL_WIELD_COOLDOWN_MULTIPLIER = builder.defineInRange("dual_wield_cooldown_multiplier", 0.65D, 0.05D, 1.0D);
+        DUAL_WIELD_DAMAGE_MULTIPLIER = builder.defineInRange("dual_wield_damage_multiplier", 0.67D, 0.0D, 100.0D);
         DUAL_WIELD_FINISHER_DAMAGE_MULTIPLIER = builder.defineInRange("dual_wield_finisher_damage_multiplier", 1.35D, 1.0D, 100.0D);
         DUAL_WIELD_FINISHER_POSTURE_MULTIPLIER = builder.defineInRange("dual_wield_finisher_posture_multiplier", 1.5D, 1.0D, 100.0D);
         GUARD_RECOVERY_PER_SECOND = builder.defineInRange("guard_recovery_per_second", 20.0D, 0.0D, 10000.0D);
@@ -171,6 +175,10 @@ public final class CombatConfig {
         return DEFAULT_STAGGER_COOLDOWN_TICKS.get();
     }
 
+    public static float staggerCooldownPostureDamageMultiplier() {
+        return STAGGER_COOLDOWN_POSTURE_DAMAGE_MULTIPLIER.get().floatValue();
+    }
+
     public static float postureAfterBreakRatio() {
         return POSTURE_AFTER_BREAK_RATIO.get().floatValue();
     }
@@ -205,6 +213,10 @@ public final class CombatConfig {
 
     public static float dualWieldCooldownMultiplier() {
         return DUAL_WIELD_COOLDOWN_MULTIPLIER.get().floatValue();
+    }
+
+    public static float dualWieldDamageMultiplier() {
+        return DUAL_WIELD_DAMAGE_MULTIPLIER.get().floatValue();
     }
 
     public static float dualWieldFinisherDamageMultiplier() {

@@ -9,11 +9,13 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.destroyermob.mobscombat.config.CombatConfig;
+import org.destroyermob.mobscombat.mixin.CreeperFuseAccessor;
 import org.destroyermob.mobscombat.network.ModNetworking;
 
 public final class PostureSystem {
@@ -133,6 +135,7 @@ public final class PostureSystem {
                 mob.setTarget(null);
             }
         }
+        cancelCreeperFuse(entity);
         if (entity.isUsingItem()) {
             entity.stopUsingItem();
         }
@@ -153,7 +156,15 @@ public final class PostureSystem {
         if (postureDamage <= 0.0F) {
             return;
         }
-        targetState.damagePosture(postureDamage);
+        if (targetState.staggerCooldownTicks() > 0) {
+            postureDamage *= CombatConfig.staggerCooldownPostureDamageMultiplier();
+            if (postureDamage <= 0.0F) {
+                return;
+            }
+            targetState.damagePosture(postureDamage, 1.0F);
+        } else {
+            targetState.damagePosture(postureDamage);
+        }
         if (CombatConfig.debugMessagesEnabled() && source instanceof ServerPlayer player) {
             player.sendSystemMessage(Component.literal("Posture " + shortId(target) + ": -" + format(postureDamage) + " -> " + format(targetState.currentPosture()) + "/" + format(targetState.maxPosture()) + " (" + targetProfileSource + ", " + weaponProfileSource + ")"));
         }
@@ -173,6 +184,7 @@ public final class PostureSystem {
         int cooldown = Math.max(targetProfile.staggerCooldownTicks(), CombatConfig.defaultStaggerCooldownTicks());
         targetState.stagger(Math.max(1, duration), cooldown, hard);
         targetState.restorePostureAfterBreak();
+        cancelCreeperFuse(target);
 
         if (target.level() instanceof ServerLevel level) {
             level.sendParticles(
@@ -213,6 +225,17 @@ public final class PostureSystem {
         }
         int duration = Math.max(profileDuration, CombatConfig.defaultStaggerDurationTicks());
         return hard ? duration + 6 : duration;
+    }
+
+    private static void cancelCreeperFuse(LivingEntity entity) {
+        if (!(entity instanceof Creeper creeper)) {
+            return;
+        }
+        creeper.setSwellDir(-1);
+        creeper.getEntityData().set(CreeperFuseAccessor.mobscombat$ignitedDataAccessor(), false);
+        CreeperFuseAccessor accessor = (CreeperFuseAccessor) creeper;
+        accessor.mobscombat$setSwell(0);
+        accessor.mobscombat$setOldSwell(0);
     }
 
     private static float maxHealth(LivingEntity entity) {
