@@ -1,9 +1,13 @@
 {
   "jade.mobscombat.archetype": "Archetype: %s",
+  "jade.mobscombat.defense": "Armor: %s",
+  "jade.mobscombat.defense_with_toughness": "Armor: %s, Toughness: %s",
   "jade.mobscombat.guard": "Guard: %s/%s (%s%%)",
   "jade.mobscombat.posture": "Posture: %s/%s (%s%%)",
   "jade.mobscombat.profile_source": "Profile: %s",
   "jade.mobscombat.seconds": "%ss",
+  "jade.mobscombat.world_tier_defense": "World Tier Armor (%s): %s",
+  "jade.mobscombat.world_tier_defense_with_toughness": "World Tier Armor (%s): %s, Toughness: %s",
   "jade.mobscombat.status.counter": "Counter Window: %s",
   "jade.mobscombat.status.guard_broken": "Guard Broken",
   "jade.mobscombat.status.hard_stagger": "Hard Staggered: %s",

@@ -17,6 +17,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import org.destroyermob.mobscombat.MobsCombat;
@@ -82,7 +83,7 @@ public final class DualWieldSystem {
 
     public static void handleAttack(ServerPlayer player, int targetId, boolean usingSecondaryAction, InteractionHand hand, boolean finisher) {
         updateAttackSpeedModifier(player);
-        if (!CombatConfig.dualWieldEnabled() || player.isSpectator() || isAttackSuppressed(player)) {
+        if (player.isSpectator() || isAttackSuppressed(player)) {
             return;
         }
 
@@ -95,13 +96,22 @@ public final class DualWieldSystem {
             return;
         }
 
-        boolean dualWielding = isDualWielding(player);
-        if (!dualWielding) {
+        ItemStack weapon = hand == InteractionHand.OFF_HAND ? player.getOffhandItem() : player.getMainHandItem();
+        if (!weapon.isItemEnabled(level.enabledFeatures())) {
             return;
         }
 
-        ItemStack weapon = hand == InteractionHand.OFF_HAND ? player.getOffhandItem() : player.getMainHandItem();
-        if (!weapon.isItemEnabled(level.enabledFeatures()) || !isWeapon(weapon)) {
+        boolean dualWielding = isDualWielding(player);
+        if (!dualWielding) {
+            if (hand != InteractionHand.MAIN_HAND || !(player.getControlledVehicle() instanceof Boat)) {
+                return;
+            }
+            player.setShiftKeyDown(usingSecondaryAction);
+            player.connection.handleInteract(ServerboundInteractPacket.createAttackPacket(target, usingSecondaryAction));
+            return;
+        }
+
+        if (!isWeapon(weapon)) {
             return;
         }
 

@@ -7,6 +7,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import org.destroyermob.mobscombat.MobsCombat;
 import org.destroyermob.mobscombat.combat.CombatProfileResolver;
@@ -87,6 +88,21 @@ public final class MobsCombatJadePlugin implements IWailaPlugin {
                 combat.putBoolean("guard_broken", state.isGuardBroken());
             }
 
+            double armor = living.getAttributeValue(Attributes.ARMOR);
+            double toughness = living.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
+            if (armor > 0.0D || toughness > 0.0D) {
+                combat.putBoolean("has_defense", true);
+                combat.putFloat("armor", (float) armor);
+                combat.putFloat("armor_toughness", (float) toughness);
+            }
+
+            ApotheosisCompat.worldTierDefense(living).ifPresent(worldTier -> {
+                combat.putBoolean("has_world_tier_defense", true);
+                combat.putString("world_tier", worldTier.tier());
+                combat.putFloat("world_tier_armor", worldTier.armor());
+                combat.putFloat("world_tier_toughness", worldTier.toughness());
+            });
+
             if (!combat.isEmpty()) {
                 tag.put(DATA_KEY, combat);
             }
@@ -120,6 +136,43 @@ public final class MobsCombatJadePlugin implements IWailaPlugin {
                         Component.literal(format(max)),
                         Math.round(percent(current, max))
                 ).withStyle(ratioColor(current, max)));
+            }
+
+            if (combat.getBoolean("has_defense")) {
+                float armor = combat.getFloat("armor");
+                float toughness = combat.getFloat("armor_toughness");
+                if (toughness > 0.0F) {
+                    tooltip.add(Component.translatable(
+                            "jade.mobscombat.defense_with_toughness",
+                            Component.literal(formatCompact(armor)),
+                            Component.literal(formatCompact(toughness))
+                    ).withStyle(ChatFormatting.GRAY));
+                } else {
+                    tooltip.add(Component.translatable(
+                            "jade.mobscombat.defense",
+                            Component.literal(formatCompact(armor))
+                    ).withStyle(ChatFormatting.GRAY));
+                }
+            }
+
+            if (combat.getBoolean("has_world_tier_defense")) {
+                float armor = combat.getFloat("world_tier_armor");
+                float toughness = combat.getFloat("world_tier_toughness");
+                Component tier = Component.literal(displayTier(combat.getString("world_tier")));
+                if (toughness > 0.0F) {
+                    tooltip.add(Component.translatable(
+                            "jade.mobscombat.world_tier_defense_with_toughness",
+                            tier,
+                            Component.literal(formatSignedCompact(armor)),
+                            Component.literal(formatSignedCompact(toughness))
+                    ).withStyle(ChatFormatting.LIGHT_PURPLE));
+                } else {
+                    tooltip.add(Component.translatable(
+                            "jade.mobscombat.world_tier_defense",
+                            tier,
+                            Component.literal(formatSignedCompact(armor))
+                    ).withStyle(ChatFormatting.LIGHT_PURPLE));
+                }
             }
 
             addStatusLines(tooltip, combat);
@@ -204,6 +257,43 @@ public final class MobsCombatJadePlugin implements IWailaPlugin {
 
         private static String format(float value) {
             return String.format(Locale.ROOT, "%.1f", value);
+        }
+
+        private static String formatCompact(float value) {
+            if (Math.abs(value - Math.round(value)) < 0.001F) {
+                return Integer.toString(Math.round(value));
+            }
+            return format(value);
+        }
+
+        private static String formatSignedCompact(float value) {
+            if (Math.abs(value) < 0.001F) {
+                return "+0";
+            }
+            return (value > 0.0F ? "+" : "-") + formatCompact(Math.abs(value));
+        }
+
+        private static String displayTier(String tier) {
+            if (tier == null || tier.isBlank()) {
+                return "Unknown";
+            }
+
+            String normalized = tier.replace('_', ' ').replace('-', ' ');
+            StringBuilder builder = new StringBuilder(normalized.length());
+            boolean uppercaseNext = true;
+            for (int i = 0; i < normalized.length(); i++) {
+                char current = normalized.charAt(i);
+                if (current == ' ') {
+                    builder.append(current);
+                    uppercaseNext = true;
+                } else if (uppercaseNext) {
+                    builder.append(Character.toUpperCase(current));
+                    uppercaseNext = false;
+                } else {
+                    builder.append(Character.toLowerCase(current));
+                }
+            }
+            return builder.toString();
         }
     }
 }

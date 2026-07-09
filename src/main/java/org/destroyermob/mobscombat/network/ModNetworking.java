@@ -29,7 +29,7 @@ public final class ModNetworking {
         PacketDistributor.sendToPlayer(player, new CombatFeedbackPayload(type));
     }
 
-    public static void sendDualWieldAttack(int targetId, boolean usingSecondaryAction, InteractionHand hand, boolean finisher) {
+    public static void sendCombatAttack(int targetId, boolean usingSecondaryAction, InteractionHand hand, boolean finisher) {
         PacketDistributor.sendToServer(new DualWieldAttackPayload(targetId, usingSecondaryAction, hand == InteractionHand.OFF_HAND, finisher));
     }
 

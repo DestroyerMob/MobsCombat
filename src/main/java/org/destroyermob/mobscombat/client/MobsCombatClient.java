@@ -11,6 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.IEventBus;
@@ -57,6 +59,10 @@ public final class MobsCombatClient {
         minecraft.player.displayClientMessage(Component.translatable(payload.feedbackType().translationKey()).withStyle(feedbackColor(payload.feedbackType())), true);
     }
 
+    public static boolean tryStartCustomAttack() {
+        return tryStartDualWieldAttack() || tryStartMountedBoatAttack();
+    }
+
     public static boolean tryStartDualWieldAttack() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null
@@ -78,8 +84,32 @@ public final class MobsCombatClient {
         minecraft.player.swing(attackHand);
         boolean finisher = PunchyCompat.recordAttack(minecraft, attackHand);
         if (minecraft.hitResult instanceof EntityHitResult hitResult) {
-            ModNetworking.sendDualWieldAttack(hitResult.getEntity().getId(), minecraft.player.isShiftKeyDown(), attackHand, finisher);
+            ModNetworking.sendCombatAttack(hitResult.getEntity().getId(), minecraft.player.isShiftKeyDown(), attackHand, finisher);
         }
+        minecraft.player.resetAttackStrengthTicker();
+        return true;
+    }
+
+    private static boolean tryStartMountedBoatAttack() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null
+                || minecraft.level == null
+                || minecraft.player.isSpectator()
+                || !minecraft.player.isHandsBusy()
+                || !(minecraft.player.getControlledVehicle() instanceof Boat)
+                || !(minecraft.hitResult instanceof EntityHitResult hitResult)
+                || !(hitResult.getEntity() instanceof LivingEntity)) {
+            return false;
+        }
+
+        ItemStack itemStack = minecraft.player.getMainHandItem();
+        if (!itemStack.isItemEnabled(minecraft.level.enabledFeatures())) {
+            return false;
+        }
+
+        minecraft.player.swing(InteractionHand.MAIN_HAND);
+        PunchyCompat.recordAttack(minecraft, InteractionHand.MAIN_HAND);
+        ModNetworking.sendCombatAttack(hitResult.getEntity().getId(), minecraft.player.isShiftKeyDown(), InteractionHand.MAIN_HAND, false);
         minecraft.player.resetAttackStrengthTicker();
         return true;
     }

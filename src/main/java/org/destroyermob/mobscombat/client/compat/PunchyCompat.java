@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.vehicle.Boat;
 import org.destroyermob.mobscombat.combat.DualWieldSystem;
 
 public final class PunchyCompat {
@@ -32,7 +33,8 @@ public final class PunchyCompat {
             return false;
         }
 
-        boolean finisher = primeVisualCombo(minecraft);
+        boolean controllingBoat = isControllingBoat(minecraft);
+        boolean finisher = controllingBoat ? false : primeVisualCombo(minecraft);
         try {
             recordCriticalCandidate.invoke(null, minecraft);
         } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
@@ -45,7 +47,7 @@ public final class PunchyCompat {
     }
 
     public static boolean shouldForceDualThrust(Minecraft minecraft, Object clip) {
-        if (minecraft == null || clip == null || forceDualThrustUntilTick == Long.MIN_VALUE) {
+        if (minecraft == null || clip == null || forceDualThrustUntilTick == Long.MIN_VALUE || isControllingBoat(minecraft)) {
             return false;
         }
 
@@ -136,5 +138,9 @@ public final class PunchyCompat {
             return false;
         }
         return DualWieldSystem.hasUsableMainHandWeapon(minecraft.player) && DualWieldSystem.hasUsableOffhandWeapon(minecraft.player);
+    }
+
+    private static boolean isControllingBoat(Minecraft minecraft) {
+        return minecraft != null && minecraft.player != null && minecraft.player.getControlledVehicle() instanceof Boat;
     }
 }
