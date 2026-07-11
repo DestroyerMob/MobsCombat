@@ -12,11 +12,13 @@
   "jade.mobscombat.status.guard_broken": "Guard Broken",
   "jade.mobscombat.status.hard_stagger": "Hard Staggered: %s",
   "jade.mobscombat.status.parry": "Parry: %s",
+  "jade.mobscombat.status.parry_ready": "Parry Ready: %s",
   "jade.mobscombat.status.recovery": "Recovery: %s",
   "jade.mobscombat.status.stagger": "Staggered: %s",
   "jade.mobscombat.status.stagger_cooldown": "Stagger Cooldown: %s",
   "jade.mobscombat.status.stealth_strike": "Stealth Strike: %s",
   "mobscombat.feedback.guard_break": "Guard Broken",
+  "mobscombat.feedback.parry_ready": "Parry Ready",
   "mobscombat.feedback.parry": "Parry",
   "mobscombat.feedback.perfect_block": "Perfect Block",
   "mobscombat.feedback.stealth_strike": "Stealth Strike",
@@ -29,5 +31,7 @@
   "mobscombat.archetype.generic_hostile": "Generic Hostile",
   "mobscombat.archetype.no_op": "Disabled",
   "mobscombat.archetype.ranged": "Ranged",
-  "mobscombat.archetype.swarm": "Swarm"
+  "mobscombat.archetype.swarm": "Swarm",
+  "key.categories.mobscombat": "Mobs Combat",
+  "key.mobscombat.parry": "Parry"
 }

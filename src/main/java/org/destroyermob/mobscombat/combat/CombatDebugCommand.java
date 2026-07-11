@@ -20,7 +20,10 @@ public final class CombatDebugCommand {
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("posture")
                         .then(Commands.argument("target", EntityArgument.entity())
-                                .executes(CombatDebugCommand::showPosture))));
+                                .executes(CombatDebugCommand::showPosture)))
+                .then(Commands.literal("inspect")
+                        .then(Commands.argument("target", EntityArgument.entity())
+                                .executes(CombatDebugCommand::inspectCombat))));
     }
 
     private static int showPosture(com.mojang.brigadier.context.CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -43,6 +46,34 @@ public final class CombatDebugCommand {
                         + " recovery=" + recovery
                         + " archetype=" + resolved.profile().archetype()
                         + " source=" + resolved.source()
+        ), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int inspectCombat(com.mojang.brigadier.context.CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity target = EntityArgument.getEntity(context, "target");
+        if (!(target instanceof LivingEntity living)) {
+            context.getSource().sendFailure(Component.literal("Target is not a living entity."));
+            return 0;
+        }
+
+        ResolvedEntityProfile entityProfile = CombatProfileResolver.resolve(living);
+        CombatState state = CombatStateManager.get(living);
+        ResolvedWeaponProfile mainHand = WeaponProfileResolver.resolve(living.getMainHandItem());
+        ResolvedWeaponProfile offhand = WeaponProfileResolver.resolve(living.getOffhandItem());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Combat " + net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(living.getType())
+                        + " posture=" + format(state == null ? PostureSystem.maxPosture(living, entityProfile.profile()) : state.currentPosture())
+                        + "/" + format(state == null ? PostureSystem.maxPosture(living, entityProfile.profile()) : state.maxPosture())
+                        + " guard=" + format(state == null ? 0.0F : state.currentGuard()) + "/" + format(state == null ? 0.0F : state.maxGuard())
+                        + " stagger=" + (state == null ? 0 : state.staggerTicks())
+                        + " recovery=" + (state == null ? 0 : state.recoveryTicks())
+                        + " counter=" + (state == null ? 0 : state.counterWindowTicks())
+                        + " parry_ready=" + (state == null ? 0 : state.parryReadyTicks())
+                        + " parry_cooldown=" + (state == null ? 0 : state.parryCooldownTicks())
+                        + " profile=" + entityProfile.source()
+                        + " main=" + mainHand.source()
+                        + " off=" + offhand.source()
         ), false);
         return Command.SINGLE_SUCCESS;
     }

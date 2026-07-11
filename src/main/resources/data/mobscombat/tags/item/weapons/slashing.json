@@ -3,6 +3,10 @@
   "values": [
     "#minecraft:swords",
     {
+      "id": "mobstoolforging:sword",
+      "required": false
+    },
+    {
       "id": "#betterenchanting:weapons/swords",
       "required": false
     },

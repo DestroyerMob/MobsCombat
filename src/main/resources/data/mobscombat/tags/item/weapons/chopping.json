@@ -3,6 +3,14 @@
   "values": [
     "#minecraft:axes",
     {
+      "id": "mobstoolforging:axe",
+      "required": false
+    },
+    {
+      "id": "mobstoolforging:mattock",
+      "required": false
+    },
+    {
       "id": "#betterenchanting:tools/axes",
       "required": false
     },

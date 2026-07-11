@@ -28,6 +28,7 @@ public final class CombatConfig {
     private static final ModConfigSpec.IntValue PERFECT_BLOCK_WINDOW_TICKS;
     private static final ModConfigSpec.IntValue COUNTER_WINDOW_TICKS;
     private static final ModConfigSpec.IntValue PARRY_WINDOW_TICKS;
+    private static final ModConfigSpec.IntValue PARRY_COOLDOWN_TICKS;
     private static final ModConfigSpec.IntValue DAGGER_PARRY_WINDOW_BONUS_TICKS;
     private static final ModConfigSpec.DoubleValue PARRY_DAMAGE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue PARRY_POSTURE_DAMAGE;
@@ -76,7 +77,8 @@ public final class CombatConfig {
         ENABLE_PARRY = builder.define("enable_parry", true);
         PERFECT_BLOCK_WINDOW_TICKS = builder.defineInRange("perfect_block_window_ticks", 6, 0, 200);
         COUNTER_WINDOW_TICKS = builder.defineInRange("counter_window_ticks", 20, 0, 72000);
-        PARRY_WINDOW_TICKS = builder.defineInRange("parry_window_ticks", 5, 0, 200);
+        PARRY_WINDOW_TICKS = builder.defineInRange("parry_window_ticks", 12, 1, 200);
+        PARRY_COOLDOWN_TICKS = builder.defineInRange("parry_cooldown_ticks", 18, 1, 72000);
         DAGGER_PARRY_WINDOW_BONUS_TICKS = builder.defineInRange("dagger_parry_window_bonus_ticks", 3, 0, 200);
         PARRY_DAMAGE_MULTIPLIER = builder.defineInRange("parry_damage_multiplier", 0.0D, 0.0D, 1.0D);
         PARRY_POSTURE_DAMAGE = builder.defineInRange("parry_posture_damage", 8.0D, 0.0D, 10000.0D);
@@ -197,6 +199,10 @@ public final class CombatConfig {
 
     public static int parryWindowTicks() {
         return PARRY_WINDOW_TICKS.get();
+    }
+
+    public static int parryCooldownTicks() {
+        return PARRY_COOLDOWN_TICKS.get();
     }
 
     public static int daggerParryWindowBonusTicks() {

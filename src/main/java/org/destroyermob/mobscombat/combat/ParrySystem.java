@@ -17,6 +17,30 @@ public final class ParrySystem {
     private ParrySystem() {
     }
 
+    public static boolean tryArmParry(ServerPlayer player) {
+        if (!CombatConfig.parryEnabled() || player.isSpectator() || !player.isAlive()) {
+            return false;
+        }
+
+        ItemStack weapon = player.getMainHandItem();
+        ResolvedWeaponProfile resolvedWeapon = WeaponProfileResolver.resolve(weapon);
+        if (!resolvedWeapon.recognizedWeapon() || WeaponProfileResolver.isShieldLike(weapon)) {
+            return false;
+        }
+
+        CombatState state = CombatStateManager.getOrCreate(player);
+        int windowTicks = CombatConfig.parryWindowTicks();
+        if (weapon.is(CombatTags.Items.DAGGERS)) {
+            windowTicks += CombatConfig.daggerParryWindowBonusTicks();
+        }
+        if (state.isStaggered() || !state.armParry(windowTicks, CombatConfig.parryCooldownTicks())) {
+            return false;
+        }
+
+        ModNetworking.sendCombatFeedback(player, CombatFeedbackType.PARRY_READY);
+        return true;
+    }
+
     public static boolean tryParry(LivingDamageEvent.Pre event) {
         if (!CombatConfig.parryEnabled() || event.getNewDamage() <= 0.0F || !(event.getEntity() instanceof ServerPlayer player)) {
             return false;
@@ -28,18 +52,14 @@ public final class ParrySystem {
             return false;
         }
 
-        ItemStack weapon = player.getMainHandItem();
-        ResolvedWeaponProfile resolvedWeapon = WeaponProfileResolver.resolve(weapon);
-        if (!resolvedWeapon.recognizedWeapon() || WeaponProfileResolver.isShieldLike(weapon)) {
+        CombatState state = CombatStateManager.getOrCreate(player);
+        if (!state.consumeParryReadiness()) {
             return false;
         }
 
-        CombatState state = CombatStateManager.getOrCreate(player);
-        int window = CombatConfig.parryWindowTicks();
-        if (weapon.is(CombatTags.Items.DAGGERS)) {
-            window += CombatConfig.daggerParryWindowBonusTicks();
-        }
-        if (!state.consumeParryIntentFor(attacker.getId(), player.tickCount, window)) {
+        ItemStack weapon = player.getMainHandItem();
+        ResolvedWeaponProfile resolvedWeapon = WeaponProfileResolver.resolve(weapon);
+        if (!resolvedWeapon.recognizedWeapon() || WeaponProfileResolver.isShieldLike(weapon)) {
             return false;
         }
 

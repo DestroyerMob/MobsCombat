@@ -10,9 +10,10 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.destroyermob.mobscombat.client.MobsCombatClient;
 import org.destroyermob.mobscombat.combat.DualWieldSystem;
+import org.destroyermob.mobscombat.combat.ParrySystem;
 
 public final class ModNetworking {
-    private static final String NETWORK_VERSION = "2";
+    private static final String NETWORK_VERSION = "3";
 
     private ModNetworking() {
     }
@@ -33,11 +34,16 @@ public final class ModNetworking {
         PacketDistributor.sendToServer(new DualWieldAttackPayload(targetId, usingSecondaryAction, hand == InteractionHand.OFF_HAND, finisher));
     }
 
+    public static void requestParryStance() {
+        PacketDistributor.sendToServer(ParryStancePayload.INSTANCE);
+    }
+
     private static void registerPayloadHandlers(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(NETWORK_VERSION).optional();
         registrar.playToClient(PlayerPosturePayload.TYPE, PlayerPosturePayload.STREAM_CODEC, ModNetworking::handlePlayerPosture);
         registrar.playToClient(CombatFeedbackPayload.TYPE, CombatFeedbackPayload.STREAM_CODEC, ModNetworking::handleCombatFeedback);
         registrar.playToServer(DualWieldAttackPayload.TYPE, DualWieldAttackPayload.STREAM_CODEC, ModNetworking::handleDualWieldAttack);
+        registrar.playToServer(ParryStancePayload.TYPE, ParryStancePayload.STREAM_CODEC, ModNetworking::handleParryStance);
     }
 
     private static void handlePlayerPosture(PlayerPosturePayload payload, IPayloadContext context) {
@@ -62,6 +68,14 @@ public final class ModNetworking {
                         payload.offhand() ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND,
                         payload.finisher()
                 );
+            }
+        });
+    }
+
+    private static void handleParryStance(ParryStancePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                ParrySystem.tryArmParry(player);
             }
         });
     }

@@ -20,7 +20,7 @@ Active internal playtesting in Minecraft Beyond. The current slice is intentiona
 - Empty posture opens soft or hard stagger and a recovery window. Boss-like entities default to shorter, safer staggers, and hard stagger can be disabled globally or per entity profile.
 - Players can also use posture. When damaged posture is active, a dedicated HUD bar temporarily replaces the experience bar until posture recovers.
 - Shields use a separate guard pool with recovery delay, guard break, a configurable perfect-block window, and a counter window.
-- Parrying is a timed weapon strike into an incoming direct melee hit. Daggers receive a configurable timing bonus; a successful parry can cancel damage, pressure the attacker, and open a counter.
+- Parry is a dedicated, client-configurable keybind (V by default) that arms a short weapon-deflection stance. It can deflect the next direct melee hit from any non-player attacker, so it is usable against Minecraft's non-telegraphed AI attacks. Daggers receive a configurable readiness bonus; a successful parry cancels damage, pressures the attacker, and opens a counter.
 - Sneaking reduces hostile visibility outside a configurable close-awareness radius and vision cone. Direct hidden melee attacks gain stealth-strike damage and posture pressure, with a stronger dagger bonus.
 - Combat feedback for perfect blocks, guard breaks, parries, and stealth strikes is sent to the client as short action-bar messages alongside world sound and particles.
 
@@ -59,7 +59,7 @@ Built-in weapon families cover great swords, battle axes, daggers, machetes, spe
 
 ## Configuration
 
-The common config can independently disable the overall overhaul, posture, player or PvP posture, hard stagger, shield guard, timed blocks, parry, stealth, dual wielding, recovery windows, and debug messages. It also exposes the main timing and balance values for posture recovery, stagger, guard, parry, counters, stealth visibility/strikes, and dual-wield cooldown, damage, and finisher multipliers.
+The common config can independently disable the overall overhaul, posture, player or PvP posture, hard stagger, shield guard, timed blocks, parry, stealth, dual wielding, recovery windows, and debug messages. It also exposes the main timing and balance values for posture recovery, stagger, guard, parry readiness/cooldown, counters, stealth visibility/strikes, and dual-wield cooldown, damage, and finisher multipliers.
 
 Defaults keep the systems enabled except PvP posture, boss hard stagger, and debug messages.
 
@@ -69,7 +69,10 @@ Operators can inspect an entity's resolved profile and live posture state with:
 
 ```text
 /mobscombat posture <target>
+/mobscombat inspect <target>
 ```
+
+`inspect` also reports the resolved main- and off-hand weapon sources plus guard, recovery, counter, and parry readiness/cooldown state. See `docs/TEST_MATRIX.md` for the pack playtest pass.
 
 ## Building
 
