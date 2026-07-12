@@ -29,6 +29,7 @@ Run this matrix in a fresh local world after changing combat profiles, balance d
 | --- | --- |
 | Posture break | Repeated full hits reduce a hostile's posture, then apply the configured stagger/recovery behavior. |
 | Counter | Attack during the counter window from a successful parry or perfect block. | The attack receives the weapon profile's counter posture multiplier. |
+| Optional parry integration state | After a successful parry, inspect the server combat state from an optional integration. | `hasParryCounterWindow()` remains true for the configured counter window and `successfulParryCount()` increments exactly once. A later perfect block marks the active counter as non-parry. |
 | Stealth | Strike an unaware hostile while sneaking, then repeat inside close awareness range. | Only the unseen strike gets stealth damage and posture bonuses. |
 | Dual wield | Attack with two recognised weapons, then repeat with a utility item in off-hand. | Valid weapon pairs alternate hands; utility off-hand preserves normal attacks and use actions. |
 | Boat | Attack from a boat with and without dual weapons. | Normal boat attacks remain available; no stuck attack state or forced finisher occurs. |

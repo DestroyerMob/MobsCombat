@@ -28,6 +28,8 @@ Active internal playtesting in Minecraft Beyond. The current slice is intentiona
 
 Mobs Combat turns the existing offhand slot into a real second melee attack path for recognized weapons. When both hands hold valid weapons, attacks alternate between hands, use the selected stack's attack attributes, and apply configurable cooldown and damage multipliers. An offhand weapon can also attack when the main hand is empty or not recognized as a weapon.
 
+Items in `mobscombat:weapons/two_handed` never enter the dual-wield path when held in either hand. The built-in tag includes great swords, battle axes, and spears, and datapacks can extend it for additional weapon families.
+
 The attack remains server-authoritative: the client requests a hand and target, the server validates range, cooldown, target, and held stacks, then routes the hit through the normal player attack calculation with the hands restored immediately afterward.
 
 When Punchy is present, Mobs Combat coordinates a three-beat visual sequence: main-hand slash, mirrored offhand slash, then a dual thrust. The thrust can act as a configurable damage/posture finisher. Mounted boat attacks use a guarded fallback so normal attacks remain available without forcing the dual-thrust animation.

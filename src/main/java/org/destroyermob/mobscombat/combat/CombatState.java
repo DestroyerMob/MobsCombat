@@ -15,6 +15,8 @@ public final class CombatState {
     private int counterWindowTicks;
     private int recentPerfectBlockTicks;
     private int recentParryTicks;
+    private long successfulParryCount;
+    private boolean parryCounterWindow;
     private int parryReadyTicks;
     private int parryCooldownTicks;
     private int recentGuardBreakTicks;
@@ -44,6 +46,9 @@ public final class CombatState {
         this.staggerCooldownTicks = decrementTimer(this.staggerCooldownTicks);
         this.recoveryTicks = decrementTimer(this.recoveryTicks);
         this.counterWindowTicks = decrementTimer(this.counterWindowTicks);
+        if (this.counterWindowTicks <= 0) {
+            this.parryCounterWindow = false;
+        }
         this.recentPerfectBlockTicks = decrementTimer(this.recentPerfectBlockTicks);
         this.recentParryTicks = decrementTimer(this.recentParryTicks);
         this.parryReadyTicks = decrementTimer(this.parryReadyTicks);
@@ -159,6 +164,16 @@ public final class CombatState {
         return this.recentParryTicks;
     }
 
+    /** Stable optional-integration signal for effects that specifically require a successful parry counter. */
+    public boolean hasParryCounterWindow() {
+        return this.parryCounterWindow && this.counterWindowTicks > 0;
+    }
+
+    /** Monotonic identifier allowing optional integrations to consume one effect per successful parry. */
+    public long successfulParryCount() {
+        return this.successfulParryCount;
+    }
+
     public int parryReadyTicks() {
         return this.parryReadyTicks;
     }
@@ -194,11 +209,14 @@ public final class CombatState {
     public void markPerfectBlock() {
         this.recentPerfectBlockTicks = 10;
         this.counterWindowTicks = Math.max(this.counterWindowTicks, CombatConfig.counterWindowTicks());
+        this.parryCounterWindow = false;
     }
 
     public void markParry() {
         this.recentParryTicks = 10;
         this.counterWindowTicks = Math.max(this.counterWindowTicks, CombatConfig.counterWindowTicks());
+        this.parryCounterWindow = true;
+        this.successfulParryCount++;
     }
 
     public boolean armParry(int windowTicks, int cooldownTicks) {

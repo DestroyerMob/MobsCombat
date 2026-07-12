@@ -66,11 +66,17 @@ public final class DualWieldSystem {
     }
 
     public static boolean hasUsableOffhandWeapon(Player player) {
-        return CombatConfig.dualWieldEnabled() && isWeapon(player.getOffhandItem());
+        return CombatConfig.dualWieldEnabled()
+                && isWeapon(player.getOffhandItem())
+                && !isTwoHanded(player.getMainHandItem())
+                && !isTwoHanded(player.getOffhandItem());
     }
 
     public static boolean hasUsableMainHandWeapon(Player player) {
-        return CombatConfig.dualWieldEnabled() && isWeapon(player.getMainHandItem());
+        return CombatConfig.dualWieldEnabled()
+                && isWeapon(player.getMainHandItem())
+                && !isTwoHanded(player.getMainHandItem())
+                && !isTwoHanded(player.getOffhandItem());
     }
 
     public static boolean shouldUseCustomAttack(Player player) {
@@ -376,7 +382,13 @@ public final class DualWieldSystem {
     }
 
     private static boolean isDualWielding(Player player) {
-        return CombatConfig.dualWieldEnabled() && isWeapon(player.getMainHandItem()) && isWeapon(player.getOffhandItem());
+        ItemStack mainHand = player.getMainHandItem();
+        ItemStack offHand = player.getOffhandItem();
+        return CombatConfig.dualWieldEnabled()
+                && isWeapon(mainHand)
+                && isWeapon(offHand)
+                && !isTwoHanded(mainHand)
+                && !isTwoHanded(offHand);
     }
 
     private static boolean isAttackSuppressed(ServerPlayer player) {
@@ -389,6 +401,10 @@ public final class DualWieldSystem {
             return false;
         }
         return WeaponProfileResolver.resolve(stack).recognizedWeapon();
+    }
+
+    private static boolean isTwoHanded(ItemStack stack) {
+        return stack != null && !stack.isEmpty() && stack.is(CombatTags.Items.TWO_HANDED);
     }
 
     private record ActiveAttack(

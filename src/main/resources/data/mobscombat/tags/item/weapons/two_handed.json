@@ -1,0 +1,25 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#mobscombat:weapons/greatswords",
+      "required": false
+    },
+    {
+      "id": "#mobscombat:weapons/battle_axes",
+      "required": false
+    },
+    {
+      "id": "#mobscombat:weapons/spears",
+      "required": false
+    },
+    {
+      "id": "#mobsmoreweapons:spears",
+      "required": false
+    },
+    {
+      "id": "#mobsmoreweapons:katanas",
+      "required": false
+    }
+  ]
+}
