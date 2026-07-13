@@ -21,6 +21,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.destroyermob.mobscombat.MobsCombat;
 import org.destroyermob.mobscombat.client.compat.PunchyCompat;
 import org.destroyermob.mobscombat.combat.DualWieldSystem;
+import org.destroyermob.mobscombat.integration.bettercombat.BetterCombatCompat;
 import org.destroyermob.mobscombat.network.CombatFeedbackPayload;
 import org.destroyermob.mobscombat.network.CombatFeedbackType;
 import org.destroyermob.mobscombat.network.ModNetworking;
@@ -95,6 +96,8 @@ public final class MobsCombatClient {
         if (minecraft.player == null
                 || minecraft.level == null
                 || minecraft.player.isSpectator()
+                // Better Combat supplies its own mounted attack selection and animation.
+                || BetterCombatCompat.isLoaded()
                 || !minecraft.player.isHandsBusy()
                 || !(minecraft.player.getControlledVehicle() instanceof Boat)
                 || !(minecraft.hitResult instanceof EntityHitResult hitResult)

@@ -12,6 +12,12 @@ public final class MobsCombatMixinPlugin implements IMixinConfigPlugin {
             "org.destroyermob.mobscombat.mixin.PlayerAttackHandMixin";
     private static final String LIVING_ENTITY_WEAPON_ITEM_MIXIN =
             "org.destroyermob.mobscombat.mixin.LivingEntityWeaponItemMixin";
+    private static final String BETTER_COMBAT_OFFHAND_MIXIN =
+            "org.destroyermob.mobscombat.mixin.BetterCombatOffhandMixin";
+    private static final String BETTER_COMBAT_CLIENT_OFFHAND_MIXIN =
+            "org.destroyermob.mobscombat.mixin.client.BetterCombatClientOffhandMixin";
+    private static final String BETTER_COMBAT_USE_POSE_MIXIN =
+            "org.destroyermob.mobscombat.mixin.client.BetterCombatUsePoseMixin";
     private static final String BETTER_COMBAT_MOD_ID = "bettercombat";
 
     @Override
@@ -25,6 +31,11 @@ public final class MobsCombatMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (BETTER_COMBAT_OFFHAND_MIXIN.equals(mixinClassName)
+                || BETTER_COMBAT_CLIENT_OFFHAND_MIXIN.equals(mixinClassName)
+                || BETTER_COMBAT_USE_POSE_MIXIN.equals(mixinClassName)) {
+            return isModPresent(BETTER_COMBAT_MOD_ID);
+        }
         if (PLAYER_ATTACK_HAND_MIXIN.equals(mixinClassName)
                 || LIVING_ENTITY_WEAPON_ITEM_MIXIN.equals(mixinClassName)) {
             return !isModPresent(BETTER_COMBAT_MOD_ID);

@@ -5,13 +5,17 @@
   "refmap": "mobscombat.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BetterCombatOffhandMixin",
     "CreeperFuseAccessor",
     "LivingEntityWeaponItemMixin",
     "PlayerAttackHandMixin"
   ],
   "client": [
+    "client.BetterCombatClientOffhandMixin",
+    "client.BetterCombatUsePoseMixin",
     "client.MinecraftStartAttackMixin",
-    "client.PunchyAnimationManagerMixin"
+    "client.PunchyAnimationManagerMixin",
+    "client.PunchyKnifeThrowMixin"
   ],
   "injectors": {
     "defaultRequire": 1
