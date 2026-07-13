@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 public final class MobsCombatMixinPlugin implements IMixinConfigPlugin {
     private static final String PLAYER_ATTACK_HAND_MIXIN =
             "org.destroyermob.mobscombat.mixin.PlayerAttackHandMixin";
+    private static final String LIVING_ENTITY_WEAPON_ITEM_MIXIN =
+            "org.destroyermob.mobscombat.mixin.LivingEntityWeaponItemMixin";
     private static final String BETTER_COMBAT_MOD_ID = "bettercombat";
 
     @Override
@@ -23,7 +25,8 @@ public final class MobsCombatMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (PLAYER_ATTACK_HAND_MIXIN.equals(mixinClassName)) {
+        if (PLAYER_ATTACK_HAND_MIXIN.equals(mixinClassName)
+                || LIVING_ENTITY_WEAPON_ITEM_MIXIN.equals(mixinClassName)) {
             return !isModPresent(BETTER_COMBAT_MOD_ID);
         }
         return true;

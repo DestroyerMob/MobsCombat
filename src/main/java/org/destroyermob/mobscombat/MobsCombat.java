@@ -12,6 +12,7 @@ import org.destroyermob.mobscombat.client.MobsCombatClient;
 import org.destroyermob.mobscombat.combat.CombatDebugCommand;
 import org.destroyermob.mobscombat.combat.CombatEvents;
 import org.destroyermob.mobscombat.combat.CombatProfileResolver;
+import org.destroyermob.mobscombat.combat.HeadshotSystem;
 import org.destroyermob.mobscombat.combat.WeaponProfileResolver;
 import org.destroyermob.mobscombat.config.CombatConfig;
 import org.destroyermob.mobscombat.network.ModNetworking;
@@ -26,6 +27,8 @@ public final class MobsCombat {
 
         NeoForge.EVENT_BUS.addListener(this::addReloadListeners);
         NeoForge.EVENT_BUS.addListener(CombatEvents::recordAttackIntent);
+        NeoForge.EVENT_BUS.addListener(HeadshotSystem::recordProjectileImpact);
+        NeoForge.EVENT_BUS.addListener(HeadshotSystem::increaseProjectileHeadshotDamage);
         NeoForge.EVENT_BUS.addListener(CombatEvents::adjustDualWieldIncomingDamage);
         NeoForge.EVENT_BUS.addListener(CombatEvents::reduceStaggeredOutgoingDamage);
         NeoForge.EVENT_BUS.addListener(CombatEvents::afterLivingDamage);

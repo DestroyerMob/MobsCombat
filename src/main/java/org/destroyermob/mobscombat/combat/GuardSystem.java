@@ -41,6 +41,7 @@ public final class GuardSystem {
         if (perfectBlock) {
             state.spendGuard(guardCost * 0.15F);
             state.markPerfectBlock();
+            ParrySystem.openCounterFromBlock(player, shield, false);
             event.setShieldDamage(0.0F);
             applyPerfectBlockFeedback(player, event.getDamageSource().getEntity());
             sendFeedback(player, CombatFeedbackType.PERFECT_BLOCK);
@@ -57,6 +58,7 @@ public final class GuardSystem {
             sendFeedback(player, CombatFeedbackType.GUARD_BREAK);
         } else {
             event.setShieldDamage(Math.max(1.0F, guardCost * 0.08F));
+            ParrySystem.openCounterFromBlock(player, shield, true);
         }
     }
 

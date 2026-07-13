@@ -6,9 +6,9 @@ Run this matrix in a fresh local world after changing combat profiles, balance d
 
 | Scenario | Expected result |
 | --- | --- |
-| MTF sword | Resolves as `json:#mobscombat:weapons/slashing`; the Parry key can arm it. |
+| MTF sword | Resolves as `json:#mobscombat:weapons/slashing`; it receives the configured counter posture multiplier after a successful block. |
 | MTF axe or mattock | Resolves as `json:#mobscombat:weapons/chopping`; its higher guard pressure is visible in shield testing. |
-| MoreWeapons knife | Resolves as the dagger profile and receives the configured parry readiness bonus. |
+| MoreWeapons knife | Resolves as the dagger profile and receives its higher counter posture multiplier. |
 | MoreWeapons great sword, battle axe, machete, and spear | Each resolves to its explicit family profile rather than `fallback:generic_item`. |
 | Vanilla sword, axe, mace, trident | Resolves to slash, chop, blunt, and pierce respectively. |
 
@@ -16,11 +16,9 @@ Run this matrix in a fresh local world after changing combat profiles, balance d
 
 | Scenario | Steps | Expected result |
 | --- | --- | --- |
-| Parry readiness | Hold a recognised weapon, press the Parry key, then run `/mobscombat inspect @s`. | `parry_ready` starts near the configured window and `parry_cooldown` prevents immediate re-arming. |
-| Untargeted parry | Arm parry while looking away from a zombie, then let the zombie land a direct melee hit. | The hit is cancelled or reduced by `parry_damage_multiplier`, the zombie takes posture damage, and a counter window opens. No prior strike against that zombie is required. |
-| Dagger parry | Repeat with a recognised dagger. | Readiness lasts the base window plus the dagger bonus. |
-| Expired parry | Wait until `parry_ready` reaches zero, then take a direct melee hit. | Damage is not parried. |
-| Shield block | Raise a shield immediately before a melee hit, then repeat after holding it up. | The first case is a perfect block; the second consumes normal guard. |
+| Shield block counter | Block a melee hit with a raised shield, then run `/mobscombat inspect @s`. | The block consumes guard and opens the configured counter window regardless of how long the shield was raised. |
+| Block-capable weapon counter | Successfully block with a weapon that provides real blocking behavior. | The block opens the same counter window as a shield; a block animation without actual blocking does not qualify. |
+| Perfect block | Raise a shield immediately before a hit, then repeat after holding it up. | Both blocks open counters; only the first receives perfect-block guard efficiency and posture pressure. |
 | Guard break | Allow guard to deplete. | Blocking fails during guard-break cooldown and guard recovers only after its delay. |
 
 ## Core Combat
@@ -28,8 +26,8 @@ Run this matrix in a fresh local world after changing combat profiles, balance d
 | Scenario | Expected result |
 | --- | --- |
 | Posture break | Repeated full hits reduce a hostile's posture, then apply the configured stagger/recovery behavior. |
-| Counter | Attack during the counter window from a successful parry or perfect block. | The attack receives the weapon profile's counter posture multiplier. |
-| Optional parry integration state | After a successful parry, inspect the server combat state from an optional integration. | `hasParryCounterWindow()` remains true for the configured counter window and `successfulParryCount()` increments exactly once. A later perfect block marks the active counter as non-parry. |
+| Counter | Land a melee attack after a successful block. | The attack receives the weapon profile's counter posture multiplier and consumes the counter, so later attacks do not retain it. |
+| Optional parry integration state | After a successful block, inspect the server combat state from an optional integration. | `hasParryCounterWindow()` remains true until the configured window expires or the next melee hit consumes it; `successfulParryCount()` increments once per successful block. |
 | Stealth | Strike an unaware hostile while sneaking, then repeat inside close awareness range. | Only the unseen strike gets stealth damage and posture bonuses. |
 | Dual wield | Attack with two recognised weapons, then repeat with a utility item in off-hand. | Valid weapon pairs alternate hands; utility off-hand preserves normal attacks and use actions. |
 | Boat | Attack from a boat with and without dual weapons. | Normal boat attacks remain available; no stuck attack state or forced finisher occurs. |
@@ -38,6 +36,11 @@ Run this matrix in a fresh local world after changing combat profiles, balance d
 
 | Scenario | Expected result |
 | --- | --- |
-| Dedicated server | Join a server with the same mod version and parry repeatedly under normal latency. | The server, not the client, decides every parry; no double hits or client-only feedback occurs. |
+| Dedicated server | Join a server with the same mod version and block/counter repeatedly under normal latency. | The server decides every block counter and consumes it on the first landed melee follow-up. |
 | Reload | Run `/reload`, then repeat the profile checks. | Profile sources remain correct after data reload. |
 | Optional mods | Test with and without Punchy, Jade, and Apotheosis. | Combat remains functional; optional feedback or visuals fail closed rather than breaking attacks. |
+| Better Combat absent | Attack, dual wield, counter, stealth strike, and posture-break using only Mobs Combat. | The standalone client attack and hand-routing paths remain active. |
+| Better Combat normal combo | Complete a full Better Combat combo against one target. | Every landed hit applies the resolved Mobs Combat posture profile; counter and stealth bonuses are consumed normally. |
+| Better Combat multi-target swing | Hit several targets with one Better Combat arc. | Each valid target receives one health hit and one posture hit; later targets are not downgraded merely because they were later in the same swing. |
+| Better Combat dual wield | Alternate two Better Combat-compatible one-handed weapons. | Better Combat owns hand selection, damage, cooldown and animation; Mobs Combat does not add a second speed modifier or duplicate hit packet. |
+| Better Combat attributed fallback | Hold a Better Combat-attributed weapon with no Mobs Combat item tag or JSON profile and run `/mobscombat inspect @s`. | The weapon resolves from `bettercombat:<category>` rather than `fallback:generic_item`. |

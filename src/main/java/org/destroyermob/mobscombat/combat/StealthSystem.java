@@ -1,6 +1,9 @@
 package org.destroyermob.mobscombat.combat;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -12,6 +15,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -22,6 +26,10 @@ import org.destroyermob.mobscombat.network.ModNetworking;
 
 public final class StealthSystem {
     private static final double VECTOR_EPSILON = 1.0E-5D;
+    private static final ResourceKey<Enchantment> BACKSTAB = ResourceKey.create(
+            Registries.ENCHANTMENT,
+            ResourceLocation.fromNamespaceAndPath("betterenchanting", "backstab")
+    );
 
     private StealthSystem() {
     }
@@ -66,13 +74,11 @@ public final class StealthSystem {
         if (weapon == null || weapon.isEmpty()) {
             weapon = player.getMainHandItem();
         }
-        ResolvedWeaponProfile resolvedWeapon = WeaponProfileResolver.resolve(weapon);
-        if (!resolvedWeapon.recognizedWeapon()) {
-            return false;
-        }
 
-        float multiplier = weapon.is(CombatTags.Items.DAGGERS)
+        boolean dagger = weapon.is(CombatTags.Items.DAGGERS);
+        float multiplier = dagger
                 ? CombatConfig.daggerStealthStrikeDamageMultiplier()
+                    + backstabLevel(player, weapon) * CombatConfig.backstabDamageBonusPerLevel()
                 : CombatConfig.stealthStrikeDamageMultiplier();
         event.setNewDamage(event.getNewDamage() * multiplier);
         CombatStateManager.getOrCreate(player).markStealthStrike(target.getId(), player.tickCount);
@@ -82,16 +88,26 @@ public final class StealthSystem {
     }
 
     public static boolean isHiddenFrom(Mob observer, ServerPlayer player) {
-        if (!isHostileMob(observer) || !isTryingToSneak(player) || observer.getTarget() == player) {
+        if (!isHostileMob(observer) || isAlertedTo(observer, player)) {
             return false;
         }
 
-        float closeRange = CombatConfig.closeRangeAwarenessBlocks();
+        float closeRange = isTryingToSneak(player)
+                ? CombatConfig.sneakingCloseRangeAwarenessBlocks()
+                : CombatConfig.closeRangeAwarenessBlocks();
         if (closeRange > 0.0F && observer.distanceToSqr(player) <= closeRange * closeRange) {
             return false;
         }
 
-        return !isInsideVisionCone(observer, player, CombatConfig.hostileVisionConeDegrees());
+        float coneDegrees = isTryingToSneak(player)
+                ? CombatConfig.sneakingVisionConeDegrees()
+                : CombatConfig.hostileVisionConeDegrees();
+        return !observer.getSensing().hasLineOfSight(player)
+                || !isInsideVisionCone(observer, player, coneDegrees);
+    }
+
+    private static boolean isAlertedTo(Mob observer, ServerPlayer player) {
+        return observer.getTarget() == player || observer.getLastHurtByMob() == player;
     }
 
     private static boolean isHostileMob(Mob mob) {
@@ -104,8 +120,8 @@ public final class StealthSystem {
 
     private static boolean isInsideVisionCone(LivingEntity viewer, LivingEntity target, float coneDegrees) {
         double clampedCone = Math.max(1.0D, Math.min(360.0D, coneDegrees));
-        Vec3 look = viewer.getLookAngle();
-        Vec3 forward = new Vec3(look.x, 0.0D, look.z);
+        double headYaw = Math.toRadians(viewer.getYHeadRot());
+        Vec3 forward = new Vec3(-Math.sin(headYaw), 0.0D, Math.cos(headYaw));
         Vec3 toTarget = target.position().subtract(viewer.position());
         Vec3 direction = new Vec3(toTarget.x, 0.0D, toTarget.z);
         if (forward.lengthSqr() < VECTOR_EPSILON || direction.lengthSqr() < VECTOR_EPSILON) {
@@ -113,6 +129,14 @@ public final class StealthSystem {
         }
         double threshold = Math.cos(Math.toRadians(clampedCone * 0.5D));
         return forward.normalize().dot(direction.normalize()) >= threshold;
+    }
+
+    private static int backstabLevel(ServerPlayer player, ItemStack weapon) {
+        return player.registryAccess()
+                .registryOrThrow(Registries.ENCHANTMENT)
+                .getHolder(BACKSTAB)
+                .map(weapon::getEnchantmentLevel)
+                .orElse(0);
     }
 
     private static void playStealthStrikeFeedback(ServerPlayer player, LivingEntity target) {

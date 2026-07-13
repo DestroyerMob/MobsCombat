@@ -31,6 +31,7 @@ repositories {
 dependencies {
     compileOnly "maven.modrinth:jade:${jade_version}"
     runtimeOnly "maven.modrinth:jade:${jade_version}"
+    compileOnly "maven.modrinth:5sy6g3kz:${better_combat_version_id}"
 }
 
 neoForge {

@@ -48,12 +48,9 @@ public final class PostureSystem {
         CombatState targetState = CombatStateManager.getOrCreate(target);
         targetState.syncPostureMax(maxPosture(target, targetProfile));
 
-        CombatState attackerState = CombatStateManager.getOrCreate(attacker);
-        boolean counterWindow = attackerState.counterWindowTicks() > 0;
-        StrikeTiming effectiveTiming = StrikeTiming.fromAttackStrength(timing == StrikeTiming.QUICK ? 0.0F : 1.0F, counterWindow);
         WeaponCombatProfile weaponProfile = resolvedWeapon.profile();
 
-        float postureDamage = weaponProfile.postureDamage() * effectiveTiming.postureMultiplier(weaponProfile);
+        float postureDamage = weaponProfile.postureDamage() * timing.postureMultiplier(weaponProfile);
         postureDamage *= Math.max(0.0F, postureMultiplier);
         postureDamage *= targetProfile.postureMultiplierFor(weaponProfile.damageKind());
         if (targetState.recoveryTicks() > 0 && CombatConfig.recoveryWindowsEnabled()) {

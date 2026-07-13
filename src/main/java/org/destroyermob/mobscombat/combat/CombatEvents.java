@@ -42,9 +42,6 @@ public final class CombatEvents {
         if (!CombatConfig.combatOverhaulEnabled()) {
             return;
         }
-        if (ParrySystem.tryParry(event)) {
-            return;
-        }
         StealthSystem.tryApplyStealthStrike(event);
         Entity source = event.getSource().getEntity();
         if (!(source instanceof LivingEntity attacker) || attacker.level().isClientSide()) {
@@ -93,7 +90,7 @@ public final class CombatEvents {
         }
         CombatState playerState = CombatStateManager.getOrCreate(player);
         float attackStrength = playerState.consumeAttackStrengthFor(target.getId(), player.tickCount);
-        StrikeTiming timing = StrikeTiming.fromAttackStrength(attackStrength, playerState.counterWindowTicks() > 0);
+        StrikeTiming timing = StrikeTiming.fromAttackStrength(attackStrength, playerState.consumeCounterWindow());
         float postureMultiplier = playerState.consumeStealthStrikeFor(target.getId(), player.tickCount)
                 ? CombatConfig.stealthStrikePostureMultiplier()
                 : 1.0F;

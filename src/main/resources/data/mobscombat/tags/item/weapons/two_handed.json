@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
+    "minecraft:trident",
     {
       "id": "#mobscombat:weapons/greatswords",
       "required": false

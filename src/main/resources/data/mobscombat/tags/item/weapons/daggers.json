@@ -2,6 +2,10 @@
   "replace": false,
   "values": [
     {
+      "id": "#betterenchanting:weapons/knives",
+      "required": false
+    },
+    {
       "id": "mobsmoreweapons:wooden_knife",
       "required": false
     },

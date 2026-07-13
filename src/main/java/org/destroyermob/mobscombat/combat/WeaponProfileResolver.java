@@ -21,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.UseAnim;
+import org.destroyermob.mobscombat.integration.bettercombat.BetterCombatCompat;
 import org.slf4j.Logger;
 
 public final class WeaponProfileResolver {
@@ -58,6 +59,10 @@ public final class WeaponProfileResolver {
         }
         if (stack.is(CombatTags.Items.SLASHING) || stack.is(CombatTags.Items.MINECRAFT_SWORDS) || stack.is(CombatTags.Items.BETTER_ENCHANTING_SWORDS) || stack.getItem() instanceof SwordItem) {
             return new ResolvedWeaponProfile(WeaponCombatProfile.SWORD, "fallback:sword", true);
+        }
+        ResolvedWeaponProfile betterCombatProfile = BetterCombatCompat.resolveWeaponProfile(stack);
+        if (betterCombatProfile != null) {
+            return betterCombatProfile;
         }
         return new ResolvedWeaponProfile(WeaponCombatProfile.GENERIC, "fallback:generic_item", false);
     }

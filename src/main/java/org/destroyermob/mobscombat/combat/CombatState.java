@@ -17,8 +17,6 @@ public final class CombatState {
     private int recentParryTicks;
     private long successfulParryCount;
     private boolean parryCounterWindow;
-    private int parryReadyTicks;
-    private int parryCooldownTicks;
     private int recentGuardBreakTicks;
     private int recentStealthStrikeTicks;
     private int ticksSinceLastDamaged = 72000;
@@ -51,8 +49,6 @@ public final class CombatState {
         }
         this.recentPerfectBlockTicks = decrementTimer(this.recentPerfectBlockTicks);
         this.recentParryTicks = decrementTimer(this.recentParryTicks);
-        this.parryReadyTicks = decrementTimer(this.parryReadyTicks);
-        this.parryCooldownTicks = decrementTimer(this.parryCooldownTicks);
         this.recentGuardBreakTicks = decrementTimer(this.recentGuardBreakTicks);
         this.recentStealthStrikeTicks = decrementTimer(this.recentStealthStrikeTicks);
 
@@ -174,14 +170,6 @@ public final class CombatState {
         return this.successfulParryCount;
     }
 
-    public int parryReadyTicks() {
-        return this.parryReadyTicks;
-    }
-
-    public int parryCooldownTicks() {
-        return this.parryCooldownTicks;
-    }
-
     public int recentStealthStrikeTicks() {
         return this.recentStealthStrikeTicks;
     }
@@ -208,8 +196,6 @@ public final class CombatState {
 
     public void markPerfectBlock() {
         this.recentPerfectBlockTicks = 10;
-        this.counterWindowTicks = Math.max(this.counterWindowTicks, CombatConfig.counterWindowTicks());
-        this.parryCounterWindow = false;
     }
 
     public void markParry() {
@@ -219,20 +205,12 @@ public final class CombatState {
         this.successfulParryCount++;
     }
 
-    public boolean armParry(int windowTicks, int cooldownTicks) {
-        if (this.parryReadyTicks > 0 || this.parryCooldownTicks > 0) {
+    public boolean consumeCounterWindow() {
+        if (this.counterWindowTicks <= 0) {
             return false;
         }
-        this.parryReadyTicks = Math.max(1, windowTicks);
-        this.parryCooldownTicks = Math.max(this.parryReadyTicks, cooldownTicks);
-        return true;
-    }
-
-    public boolean consumeParryReadiness() {
-        if (this.parryReadyTicks <= 0) {
-            return false;
-        }
-        this.parryReadyTicks = 0;
+        this.counterWindowTicks = 0;
+        this.parryCounterWindow = false;
         return true;
     }
 

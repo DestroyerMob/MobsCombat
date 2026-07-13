@@ -69,8 +69,6 @@ public final class CombatDebugCommand {
                         + " stagger=" + (state == null ? 0 : state.staggerTicks())
                         + " recovery=" + (state == null ? 0 : state.recoveryTicks())
                         + " counter=" + (state == null ? 0 : state.counterWindowTicks())
-                        + " parry_ready=" + (state == null ? 0 : state.parryReadyTicks())
-                        + " parry_cooldown=" + (state == null ? 0 : state.parryCooldownTicks())
                         + " profile=" + entityProfile.source()
                         + " main=" + mainHand.source()
                         + " off=" + offhand.source()

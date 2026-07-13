@@ -16,8 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.destroyermob.mobscombat.MobsCombat;
@@ -44,8 +42,6 @@ public final class MobsCombatClient {
 
     public static void register(IEventBus eventBus) {
         eventBus.addListener(MobsCombatClient::registerGuiLayers);
-        eventBus.addListener(MobsCombatKeyMappings::register);
-        NeoForge.EVENT_BUS.addListener(MobsCombatClient::onClientTick);
     }
 
     public static void updatePlayerPosture(PlayerPosturePayload payload) {
@@ -65,16 +61,6 @@ public final class MobsCombatClient {
 
     public static boolean tryStartCustomAttack() {
         return tryStartDualWieldAttack() || tryStartMountedBoatAttack();
-    }
-
-    private static void onClientTick(ClientTickEvent.Post event) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.screen != null) {
-            return;
-        }
-        while (MobsCombatKeyMappings.PARRY.consumeClick()) {
-            ModNetworking.requestParryStance();
-        }
     }
 
     public static boolean tryStartDualWieldAttack() {
@@ -200,7 +186,6 @@ public final class MobsCombatClient {
         return switch (type) {
             case PERFECT_BLOCK -> ChatFormatting.AQUA;
             case GUARD_BREAK -> ChatFormatting.RED;
-            case PARRY_READY -> ChatFormatting.YELLOW;
             case PARRY -> ChatFormatting.GOLD;
             case STEALTH_STRIKE -> ChatFormatting.DARK_GREEN;
         };

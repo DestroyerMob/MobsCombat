@@ -5,7 +5,6 @@ import java.util.Locale;
 public enum CombatFeedbackType {
     PERFECT_BLOCK,
     GUARD_BREAK,
-    PARRY_READY,
     PARRY,
     STEALTH_STRIKE;
 

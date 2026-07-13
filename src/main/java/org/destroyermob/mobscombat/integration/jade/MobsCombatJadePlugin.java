@@ -84,7 +84,6 @@ public final class MobsCombatJadePlugin implements IWailaPlugin {
                 combat.putInt("recovery_ticks", state.recoveryTicks());
                 combat.putInt("counter_window_ticks", state.counterWindowTicks());
                 combat.putInt("parry_ticks", state.recentParryTicks());
-                combat.putInt("parry_ready_ticks", state.parryReadyTicks());
                 combat.putInt("stealth_strike_ticks", state.recentStealthStrikeTicks());
                 combat.putBoolean("guard_broken", state.isGuardBroken());
             }
@@ -224,11 +223,6 @@ public final class MobsCombatJadePlugin implements IWailaPlugin {
             int parryTicks = combat.getInt("parry_ticks");
             if (parryTicks > 0) {
                 tooltip.add(Component.translatable("jade.mobscombat.status.parry", seconds(parryTicks)).withStyle(ChatFormatting.GOLD));
-            }
-
-            int parryReadyTicks = combat.getInt("parry_ready_ticks");
-            if (parryReadyTicks > 0) {
-                tooltip.add(Component.translatable("jade.mobscombat.status.parry_ready", seconds(parryReadyTicks)).withStyle(ChatFormatting.YELLOW));
             }
 
             int stealthStrikeTicks = combat.getInt("stealth_strike_ticks");

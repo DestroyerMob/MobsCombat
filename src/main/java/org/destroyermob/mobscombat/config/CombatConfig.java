@@ -1,6 +1,7 @@
 package org.destroyermob.mobscombat.config;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.destroyermob.mobscombat.integration.bettercombat.BetterCombatCompat;
 
 public final class CombatConfig {
     public static final ModConfigSpec SPEC;
@@ -27,11 +28,6 @@ public final class CombatConfig {
     private static final ModConfigSpec.DoubleValue BOSS_HEALTH_THRESHOLD;
     private static final ModConfigSpec.IntValue PERFECT_BLOCK_WINDOW_TICKS;
     private static final ModConfigSpec.IntValue COUNTER_WINDOW_TICKS;
-    private static final ModConfigSpec.IntValue PARRY_WINDOW_TICKS;
-    private static final ModConfigSpec.IntValue PARRY_COOLDOWN_TICKS;
-    private static final ModConfigSpec.IntValue DAGGER_PARRY_WINDOW_BONUS_TICKS;
-    private static final ModConfigSpec.DoubleValue PARRY_DAMAGE_MULTIPLIER;
-    private static final ModConfigSpec.DoubleValue PARRY_POSTURE_DAMAGE;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_COOLDOWN_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_DAMAGE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_FINISHER_DAMAGE_MULTIPLIER;
@@ -42,10 +38,17 @@ public final class CombatConfig {
     private static final ModConfigSpec.IntValue GUARD_BREAK_TICKS;
     private static final ModConfigSpec.DoubleValue STEALTH_SNEAKING_VISIBILITY_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue STEALTH_CONE_DEGREES;
+    private static final ModConfigSpec.DoubleValue STEALTH_SNEAKING_CONE_DEGREES;
     private static final ModConfigSpec.DoubleValue STEALTH_CLOSE_RANGE_BLOCKS;
+    private static final ModConfigSpec.DoubleValue STEALTH_SNEAKING_CLOSE_RANGE_BLOCKS;
     private static final ModConfigSpec.DoubleValue STEALTH_STRIKE_DAMAGE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue DAGGER_STEALTH_STRIKE_DAMAGE_MULTIPLIER;
+    private static final ModConfigSpec.DoubleValue BACKSTAB_DAMAGE_BONUS_PER_LEVEL;
     private static final ModConfigSpec.DoubleValue STEALTH_STRIKE_POSTURE_MULTIPLIER;
+    private static final ModConfigSpec.BooleanValue ENABLE_PROJECTILE_HEADSHOTS;
+    private static final ModConfigSpec.DoubleValue PROJECTILE_HEADSHOT_DAMAGE_MULTIPLIER;
+    private static final ModConfigSpec.DoubleValue PROJECTILE_HEADSHOT_UPPER_EYE_BAND;
+    private static final ModConfigSpec.DoubleValue PROJECTILE_HEADSHOT_LOWER_EYE_BAND;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -77,11 +80,6 @@ public final class CombatConfig {
         ENABLE_PARRY = builder.define("enable_parry", true);
         PERFECT_BLOCK_WINDOW_TICKS = builder.defineInRange("perfect_block_window_ticks", 6, 0, 200);
         COUNTER_WINDOW_TICKS = builder.defineInRange("counter_window_ticks", 20, 0, 72000);
-        PARRY_WINDOW_TICKS = builder.defineInRange("parry_window_ticks", 12, 1, 200);
-        PARRY_COOLDOWN_TICKS = builder.defineInRange("parry_cooldown_ticks", 18, 1, 72000);
-        DAGGER_PARRY_WINDOW_BONUS_TICKS = builder.defineInRange("dagger_parry_window_bonus_ticks", 3, 0, 200);
-        PARRY_DAMAGE_MULTIPLIER = builder.defineInRange("parry_damage_multiplier", 0.0D, 0.0D, 1.0D);
-        PARRY_POSTURE_DAMAGE = builder.defineInRange("parry_posture_damage", 8.0D, 0.0D, 10000.0D);
         ENABLE_DUAL_WIELD = builder.define("enable_dual_wield", true);
         DUAL_WIELD_COOLDOWN_MULTIPLIER = builder.defineInRange("dual_wield_cooldown_multiplier", 0.65D, 0.05D, 1.0D);
         DUAL_WIELD_DAMAGE_MULTIPLIER = builder.defineInRange("dual_wield_damage_multiplier", 0.67D, 0.0D, 100.0D);
@@ -96,11 +94,29 @@ public final class CombatConfig {
         builder.push("stealth");
         ENABLE_STEALTH = builder.define("enable_stealth", true);
         STEALTH_SNEAKING_VISIBILITY_MULTIPLIER = builder.defineInRange("sneaking_visibility_multiplier", 0.35D, 0.0D, 1.0D);
-        STEALTH_CONE_DEGREES = builder.defineInRange("hostile_vision_cone_degrees", 130.0D, 1.0D, 360.0D);
+        STEALTH_CONE_DEGREES = builder.defineInRange("hostile_vision_cone_degrees", 135.0D, 1.0D, 360.0D);
+        STEALTH_SNEAKING_CONE_DEGREES = builder.defineInRange("sneaking_vision_cone_degrees", 90.0D, 1.0D, 360.0D);
         STEALTH_CLOSE_RANGE_BLOCKS = builder.defineInRange("close_range_awareness_blocks", 3.0D, 0.0D, 64.0D);
+        STEALTH_SNEAKING_CLOSE_RANGE_BLOCKS = builder.defineInRange("sneaking_close_range_awareness_blocks", 0.0D, 0.0D, 64.0D);
         STEALTH_STRIKE_DAMAGE_MULTIPLIER = builder.defineInRange("stealth_strike_damage_multiplier", 1.35D, 1.0D, 100.0D);
         DAGGER_STEALTH_STRIKE_DAMAGE_MULTIPLIER = builder.defineInRange("dagger_stealth_strike_damage_multiplier", 1.75D, 1.0D, 100.0D);
+        BACKSTAB_DAMAGE_BONUS_PER_LEVEL = builder.defineInRange("backstab_damage_bonus_per_level", 0.25D, 0.0D, 100.0D);
         STEALTH_STRIKE_POSTURE_MULTIPLIER = builder.defineInRange("stealth_strike_posture_multiplier", 1.5D, 1.0D, 100.0D);
+        builder.pop();
+
+        builder.push("headshots");
+        ENABLE_PROJECTILE_HEADSHOTS = builder
+                .comment("Whether player-owned projectiles deal bonus damage when they strike a living target's head.")
+                .define("enable_projectile_headshots", true);
+        PROJECTILE_HEADSHOT_DAMAGE_MULTIPLIER = builder
+                .comment("Universal projectile headshot damage multiplier. Better Enchanting's Headshot bonus stacks multiplicatively with this value.")
+                .defineInRange("projectile_headshot_damage_multiplier", 1.25D, 1.0D, 100.0D);
+        PROJECTILE_HEADSHOT_UPPER_EYE_BAND = builder
+                .comment("Highest valid projectile impact above eye height, measured as a fraction of the target's full hitbox height.")
+                .defineInRange("projectile_headshot_upper_eye_band", 0.20D, -1.0D, 1.0D);
+        PROJECTILE_HEADSHOT_LOWER_EYE_BAND = builder
+                .comment("Lowest valid projectile impact below eye height, measured as a fraction of the target's full hitbox height.")
+                .defineInRange("projectile_headshot_lower_eye_band", -0.10D, -1.0D, 1.0D);
         builder.pop();
 
         SPEC = builder.build();
@@ -134,7 +150,9 @@ public final class CombatConfig {
     }
 
     public static boolean dualWieldEnabled() {
-        return combatOverhaulEnabled() && ENABLE_DUAL_WIELD.get();
+        // Better Combat owns attack selection, hand swapping, cooldown and animation
+        // whenever it is installed. The config remains effective in standalone mode.
+        return combatOverhaulEnabled() && ENABLE_DUAL_WIELD.get() && !BetterCombatCompat.isLoaded();
     }
 
     public static boolean recoveryWindowsEnabled() {
@@ -197,26 +215,6 @@ public final class CombatConfig {
         return COUNTER_WINDOW_TICKS.get();
     }
 
-    public static int parryWindowTicks() {
-        return PARRY_WINDOW_TICKS.get();
-    }
-
-    public static int parryCooldownTicks() {
-        return PARRY_COOLDOWN_TICKS.get();
-    }
-
-    public static int daggerParryWindowBonusTicks() {
-        return DAGGER_PARRY_WINDOW_BONUS_TICKS.get();
-    }
-
-    public static float parryDamageMultiplier() {
-        return PARRY_DAMAGE_MULTIPLIER.get().floatValue();
-    }
-
-    public static float parryPostureDamage() {
-        return PARRY_POSTURE_DAMAGE.get().floatValue();
-    }
-
     public static float dualWieldCooldownMultiplier() {
         return DUAL_WIELD_COOLDOWN_MULTIPLIER.get().floatValue();
     }
@@ -257,8 +255,16 @@ public final class CombatConfig {
         return STEALTH_CONE_DEGREES.get().floatValue();
     }
 
+    public static float sneakingVisionConeDegrees() {
+        return STEALTH_SNEAKING_CONE_DEGREES.get().floatValue();
+    }
+
     public static float closeRangeAwarenessBlocks() {
         return STEALTH_CLOSE_RANGE_BLOCKS.get().floatValue();
+    }
+
+    public static float sneakingCloseRangeAwarenessBlocks() {
+        return STEALTH_SNEAKING_CLOSE_RANGE_BLOCKS.get().floatValue();
     }
 
     public static float stealthStrikeDamageMultiplier() {
@@ -269,7 +275,27 @@ public final class CombatConfig {
         return DAGGER_STEALTH_STRIKE_DAMAGE_MULTIPLIER.get().floatValue();
     }
 
+    public static float backstabDamageBonusPerLevel() {
+        return BACKSTAB_DAMAGE_BONUS_PER_LEVEL.get().floatValue();
+    }
+
     public static float stealthStrikePostureMultiplier() {
         return STEALTH_STRIKE_POSTURE_MULTIPLIER.get().floatValue();
+    }
+
+    public static boolean projectileHeadshotsEnabled() {
+        return combatOverhaulEnabled() && ENABLE_PROJECTILE_HEADSHOTS.get();
+    }
+
+    public static float projectileHeadshotDamageMultiplier() {
+        return PROJECTILE_HEADSHOT_DAMAGE_MULTIPLIER.get().floatValue();
+    }
+
+    public static double projectileHeadshotUpperEyeBand() {
+        return PROJECTILE_HEADSHOT_UPPER_EYE_BAND.get();
+    }
+
+    public static double projectileHeadshotLowerEyeBand() {
+        return PROJECTILE_HEADSHOT_LOWER_EYE_BAND.get();
     }
 }
