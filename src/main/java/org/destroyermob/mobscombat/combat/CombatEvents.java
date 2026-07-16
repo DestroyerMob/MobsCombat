@@ -42,6 +42,9 @@ public final class CombatEvents {
         if (!CombatConfig.combatOverhaulEnabled()) {
             return;
         }
+        if (ParrySystem.tryWeaponParry(event)) {
+            return;
+        }
         StealthSystem.tryApplyStealthStrike(event);
         Entity source = event.getSource().getEntity();
         if (!(source instanceof LivingEntity attacker) || attacker.level().isClientSide()) {
@@ -117,7 +120,11 @@ public final class CombatEvents {
             event.setDuration(0);
             return;
         }
-        if (!entity.level().isClientSide() && WeaponProfileResolver.isShieldLike(event.getItem())) {
+        if (!entity.level().isClientSide()
+                && entity instanceof ServerPlayer player
+                && WeaponProfileResolver.isParryWeapon(event.getItem())) {
+            ParrySystem.armWeaponParry(player, event.getItem());
+        } else if (!entity.level().isClientSide() && WeaponProfileResolver.isShieldLike(event.getItem())) {
             CombatStateManager.getOrCreate(entity).markShieldRaised(entity.tickCount);
         }
     }

@@ -81,6 +81,10 @@ public final class WeaponProfileResolver {
                 || stack.getUseAnimation() == UseAnim.BLOCK;
     }
 
+    public static boolean isParryWeapon(ItemStack stack) {
+        return stack != null && !stack.isEmpty() && stack.is(CombatTags.Items.PARRY_WEAPONS);
+    }
+
     public record ProfileTables(Map<ResourceLocation, WeaponCombatProfile> exact, Map<TagKey<Item>, WeaponCombatProfile> tags) {
         static ProfileTables empty() {
             return new ProfileTables(Map.of(), Map.of());

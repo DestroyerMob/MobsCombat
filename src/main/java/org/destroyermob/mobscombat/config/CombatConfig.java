@@ -28,6 +28,10 @@ public final class CombatConfig {
     private static final ModConfigSpec.DoubleValue BOSS_HEALTH_THRESHOLD;
     private static final ModConfigSpec.IntValue PERFECT_BLOCK_WINDOW_TICKS;
     private static final ModConfigSpec.IntValue COUNTER_WINDOW_TICKS;
+    private static final ModConfigSpec.IntValue PARRY_WINDOW_TICKS;
+    private static final ModConfigSpec.IntValue PARRY_COOLDOWN_TICKS;
+    private static final ModConfigSpec.DoubleValue PARRY_DAMAGE_MULTIPLIER;
+    private static final ModConfigSpec.DoubleValue PARRY_POSTURE_DAMAGE;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_COOLDOWN_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_DAMAGE_MULTIPLIER;
     private static final ModConfigSpec.DoubleValue DUAL_WIELD_FINISHER_DAMAGE_MULTIPLIER;
@@ -80,6 +84,18 @@ public final class CombatConfig {
         ENABLE_PARRY = builder.define("enable_parry", true);
         PERFECT_BLOCK_WINDOW_TICKS = builder.defineInRange("perfect_block_window_ticks", 6, 0, 200);
         COUNTER_WINDOW_TICKS = builder.defineInRange("counter_window_ticks", 20, 0, 72000);
+        PARRY_WINDOW_TICKS = builder
+                .comment("Opening ticks of a parry weapon's use stance that can deflect a frontal melee attack.")
+                .defineInRange("parry_window_ticks", 12, 1, 200);
+        PARRY_COOLDOWN_TICKS = builder
+                .comment("Minimum ticks between attempts to arm a parry weapon stance.")
+                .defineInRange("parry_cooldown_ticks", 18, 1, 72000);
+        PARRY_DAMAGE_MULTIPLIER = builder
+                .comment("Fraction of incoming melee damage retained after a successful weapon parry.")
+                .defineInRange("parry_damage_multiplier", 0.0D, 0.0D, 1.0D);
+        PARRY_POSTURE_DAMAGE = builder
+                .comment("Flat posture damage dealt to an attacker by a successful weapon parry.")
+                .defineInRange("parry_posture_damage", 8.0D, 0.0D, 10000.0D);
         ENABLE_DUAL_WIELD = builder.define("enable_dual_wield", true);
         DUAL_WIELD_COOLDOWN_MULTIPLIER = builder.defineInRange("dual_wield_cooldown_multiplier", 0.65D, 0.05D, 1.0D);
         DUAL_WIELD_DAMAGE_MULTIPLIER = builder.defineInRange("dual_wield_damage_multiplier", 0.67D, 0.0D, 100.0D);
@@ -213,6 +229,22 @@ public final class CombatConfig {
 
     public static int counterWindowTicks() {
         return COUNTER_WINDOW_TICKS.get();
+    }
+
+    public static int parryWindowTicks() {
+        return PARRY_WINDOW_TICKS.get();
+    }
+
+    public static int parryCooldownTicks() {
+        return PARRY_COOLDOWN_TICKS.get();
+    }
+
+    public static float parryDamageMultiplier() {
+        return PARRY_DAMAGE_MULTIPLIER.get().floatValue();
+    }
+
+    public static float parryPostureDamage() {
+        return PARRY_POSTURE_DAMAGE.get().floatValue();
     }
 
     public static float dualWieldCooldownMultiplier() {

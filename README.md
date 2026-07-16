@@ -20,7 +20,7 @@ Active internal playtesting in Minecraft Beyond. The current slice is intentiona
 - Empty posture opens soft or hard stagger and a recovery window. Boss-like entities default to shorter, safer staggers, and hard stagger can be disabled globally or per entity profile.
 - Players can also use posture. When damaged posture is active, a dedicated HUD bar temporarily replaces the experience bar until posture recovers.
 - Shields and genuinely block-capable weapons use a separate guard pool with recovery delay and guard break. Every successful block opens a one-hit counter window; the configurable perfect-block window only improves guard efficiency and adds posture pressure.
-- Parry is the block-and-counter sequence rather than a separate input. The first successful melee follow-up consumes the counter and uses the weapon profile's counter posture multiplier.
+- Parry is the block-and-counter sequence rather than a separate input. The first successful melee follow-up consumes the counter and uses the weapon profile's counter posture multiplier. Items in `mobscombat:weapons/parry_weapons`, including MoreWeapons katanas, use the opening frames of their use stance to deflect a frontal melee hit without a shield; a success releases the stance and opens the same counter window.
 - Sneaking reduces hostile visibility outside a configurable close-awareness radius and vision cone. Direct hidden melee attacks gain stealth-strike damage and posture pressure, with a stronger dagger bonus.
 - Combat feedback for perfect blocks, guard breaks, parries, and stealth strikes is sent to the client as short action-bar messages alongside world sound and particles.
 

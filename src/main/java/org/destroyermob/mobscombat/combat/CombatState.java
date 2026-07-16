@@ -17,6 +17,8 @@ public final class CombatState {
     private int recentParryTicks;
     private long successfulParryCount;
     private boolean parryCounterWindow;
+    private int parryReadyTicks;
+    private int parryCooldownTicks;
     private int recentGuardBreakTicks;
     private int recentStealthStrikeTicks;
     private int ticksSinceLastDamaged = 72000;
@@ -49,6 +51,8 @@ public final class CombatState {
         }
         this.recentPerfectBlockTicks = decrementTimer(this.recentPerfectBlockTicks);
         this.recentParryTicks = decrementTimer(this.recentParryTicks);
+        this.parryReadyTicks = decrementTimer(this.parryReadyTicks);
+        this.parryCooldownTicks = decrementTimer(this.parryCooldownTicks);
         this.recentGuardBreakTicks = decrementTimer(this.recentGuardBreakTicks);
         this.recentStealthStrikeTicks = decrementTimer(this.recentStealthStrikeTicks);
 
@@ -168,6 +172,23 @@ public final class CombatState {
     /** Monotonic identifier allowing optional integrations to consume one effect per successful parry. */
     public long successfulParryCount() {
         return this.successfulParryCount;
+    }
+
+    public boolean armWeaponParry(int windowTicks, int cooldownTicks) {
+        if (this.parryReadyTicks > 0 || this.parryCooldownTicks > 0) {
+            return false;
+        }
+        this.parryReadyTicks = Math.max(1, windowTicks);
+        this.parryCooldownTicks = Math.max(this.parryReadyTicks, cooldownTicks);
+        return true;
+    }
+
+    public boolean consumeWeaponParry() {
+        if (this.parryReadyTicks <= 0) {
+            return false;
+        }
+        this.parryReadyTicks = 0;
+        return true;
     }
 
     public int recentStealthStrikeTicks() {

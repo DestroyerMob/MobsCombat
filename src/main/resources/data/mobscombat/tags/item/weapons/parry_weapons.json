@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#mobsmoreweapons:katanas",
+      "required": false
+    }
+  ]
+}

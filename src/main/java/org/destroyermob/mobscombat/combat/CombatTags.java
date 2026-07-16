@@ -45,6 +45,7 @@ public final class CombatTags {
         public static final TagKey<Item> GREATSWORDS = item("weapons/greatswords");
         public static final TagKey<Item> BATTLE_AXES = item("weapons/battle_axes");
         public static final TagKey<Item> TWO_HANDED = item("weapons/two_handed");
+        public static final TagKey<Item> PARRY_WEAPONS = item("weapons/parry_weapons");
         public static final TagKey<Item> BUCKLERS = item("shields/bucklers");
         public static final TagKey<Item> TOWER_SHIELDS = item("shields/tower_shields");
         public static final TagKey<Item> SPELLWARD_SHIELDS = item("shields/spellward_shields");
