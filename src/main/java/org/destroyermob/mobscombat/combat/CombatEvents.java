@@ -3,6 +3,7 @@ package org.destroyermob.mobscombat.combat;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -103,6 +104,13 @@ public final class CombatEvents {
 
     public static void onLivingChangeTarget(LivingChangeTargetEvent event) {
         StealthSystem.onLivingChangeTarget(event);
+        if (!event.isCanceled()
+                && !event.getEntity().level().isClientSide()
+                && event.getEntity() instanceof Mob mob
+                && event.getNewAboutToBeSetTarget() instanceof ServerPlayer player
+                && mob.getTarget() != player) {
+            ModNetworking.sendAggressionIndicator(player, mob.getId());
+        }
     }
 
     public static void onLivingVisibility(LivingEvent.LivingVisibilityEvent event) {

@@ -12,7 +12,7 @@ import org.destroyermob.mobscombat.client.MobsCombatClient;
 import org.destroyermob.mobscombat.combat.DualWieldSystem;
 
 public final class ModNetworking {
-    private static final String NETWORK_VERSION = "4";
+    private static final String NETWORK_VERSION = "5";
 
     private ModNetworking() {
     }
@@ -29,6 +29,10 @@ public final class ModNetworking {
         PacketDistributor.sendToPlayer(player, new CombatFeedbackPayload(type));
     }
 
+    public static void sendAggressionIndicator(ServerPlayer player, int mobEntityId) {
+        PacketDistributor.sendToPlayer(player, new AggressionIndicatorPayload(mobEntityId));
+    }
+
     public static void sendCombatAttack(int targetId, boolean usingSecondaryAction, InteractionHand hand, boolean finisher) {
         PacketDistributor.sendToServer(new DualWieldAttackPayload(targetId, usingSecondaryAction, hand == InteractionHand.OFF_HAND, finisher));
     }
@@ -37,6 +41,7 @@ public final class ModNetworking {
         PayloadRegistrar registrar = event.registrar(NETWORK_VERSION).optional();
         registrar.playToClient(PlayerPosturePayload.TYPE, PlayerPosturePayload.STREAM_CODEC, ModNetworking::handlePlayerPosture);
         registrar.playToClient(CombatFeedbackPayload.TYPE, CombatFeedbackPayload.STREAM_CODEC, ModNetworking::handleCombatFeedback);
+        registrar.playToClient(AggressionIndicatorPayload.TYPE, AggressionIndicatorPayload.STREAM_CODEC, ModNetworking::handleAggressionIndicator);
         registrar.playToServer(DualWieldAttackPayload.TYPE, DualWieldAttackPayload.STREAM_CODEC, ModNetworking::handleDualWieldAttack);
     }
 
@@ -49,6 +54,12 @@ public final class ModNetworking {
     private static void handleCombatFeedback(CombatFeedbackPayload payload, IPayloadContext context) {
         if (FMLEnvironment.dist.isClient()) {
             context.enqueueWork(() -> MobsCombatClient.showCombatFeedback(payload));
+        }
+    }
+
+    private static void handleAggressionIndicator(AggressionIndicatorPayload payload, IPayloadContext context) {
+        if (FMLEnvironment.dist.isClient()) {
+            context.enqueueWork(() -> MobsCombatClient.showAggressionIndicator(payload));
         }
     }
 

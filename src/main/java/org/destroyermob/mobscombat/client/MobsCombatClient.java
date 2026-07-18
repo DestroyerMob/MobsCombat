@@ -18,12 +18,14 @@ import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.common.NeoForge;
 import org.destroyermob.mobscombat.MobsCombat;
 import org.destroyermob.mobscombat.client.compat.PunchyCompat;
 import org.destroyermob.mobscombat.combat.DualWieldSystem;
 import org.destroyermob.mobscombat.integration.bettercombat.BetterCombatCompat;
 import org.destroyermob.mobscombat.network.CombatFeedbackPayload;
 import org.destroyermob.mobscombat.network.CombatFeedbackType;
+import org.destroyermob.mobscombat.network.AggressionIndicatorPayload;
 import org.destroyermob.mobscombat.network.ModNetworking;
 import org.destroyermob.mobscombat.network.PlayerPosturePayload;
 
@@ -43,6 +45,7 @@ public final class MobsCombatClient {
 
     public static void register(IEventBus eventBus) {
         eventBus.addListener(MobsCombatClient::registerGuiLayers);
+        NeoForge.EVENT_BUS.addListener(AggressionIndicatorRenderer::render);
     }
 
     public static void updatePlayerPosture(PlayerPosturePayload payload) {
@@ -58,6 +61,10 @@ public final class MobsCombatClient {
             return;
         }
         minecraft.player.displayClientMessage(Component.translatable(payload.feedbackType().translationKey()).withStyle(feedbackColor(payload.feedbackType())), true);
+    }
+
+    public static void showAggressionIndicator(AggressionIndicatorPayload payload) {
+        AggressionIndicatorRenderer.show(payload.mobEntityId());
     }
 
     public static boolean tryStartCustomAttack() {
